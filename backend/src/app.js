@@ -1,14 +1,19 @@
-const express = require("express");
-// const cors = require("cors");
+import express from "express";
+import userRoutes from "./routes/user.routes.js";
+
 const app = express();
 const port = 3000;
 
-// app.use(cors());
 app.use(express.json());
+
 app.get("/", (req, res) => {
     res.send("Hello World!");
 });
 
-app.listen(port,() =>{
+app.use("/users", userRoutes);
+
+app.listen(port, () => {
     console.log(`Servidor rodando: http://localhost:${port}`);
 });
+
+export default app;
