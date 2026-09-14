@@ -1,0 +1,253 @@
+.container {
+  min-height: 100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  background-color: #eaf2ff;
+}
+
+.register {
+  flex: 1;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  padding: 40px 20px;
+}
+
+.card {
+  width: 100%;
+
+  max-width: 450px;
+
+  background-color: #ffffff;
+
+  padding: 40px;
+
+  border-radius: 16px;
+
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.1);
+
+  box-sizing: border-box;
+}
+
+/* HEADER */
+
+.header {
+  text-align: center;
+
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  color: #2563eb;
+
+  font-size: 38px;
+
+  font-weight: 700;
+
+  margin: 0 0 8px;
+}
+
+.header h2 {
+  color: #1f2937;
+
+  font-size: 22px;
+
+  font-weight: 600;
+
+  margin: 0 0 8px;
+}
+
+.header p {
+  color: #6b7280;
+
+  font-size: 14px;
+
+  margin: 0;
+}
+
+/* FORM */
+
+.form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.inputGroup label {
+  font-size: 14px;
+
+  font-weight: 600;
+
+  color: #374151;
+}
+
+.inputGroup input {
+  width: 100%;
+
+  padding: 12px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+
+  background-color: #ffffff;
+
+  color: #1f2937;
+
+  outline: none;
+
+  box-sizing: border-box;
+
+  transition: 0.2s;
+}
+
+.inputGroup input::placeholder {
+  color: #9ca3af;
+}
+
+.inputGroup input:focus {
+  border-color: #2563eb;
+
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* BUTTON */
+
+.form button {
+  width: 100%;
+
+  padding: 13px;
+
+  margin-top: 5px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background-color: #2563eb;
+
+  color: #ffffff;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.form button:hover {
+  background-color: #1d4ed8;
+}
+
+/* LOGIN */
+
+.loginLink {
+  margin-top: 25px;
+
+  text-align: center;
+}
+
+.loginLink p {
+  margin: 0 0 8px;
+
+  font-size: 14px;
+
+  color: #6b7280;
+}
+
+.loginLink a {
+  color: #2563eb;
+
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+.loginLink a:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 768px) {
+  .register {
+    padding: 30px 20px;
+  }
+
+  .card {
+    max-width: 450px;
+
+    padding: 35px;
+  }
+}
+
+/* =========================
+   CELULAR
+========================= */
+
+@media (max-width: 500px) {
+  .register {
+    padding: 20px 15px;
+  }
+
+  .card {
+    padding: 30px 20px;
+
+    border-radius: 12px;
+  }
+
+  .header {
+    margin-bottom: 25px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+  }
+
+  .header h2 {
+    font-size: 20px;
+  }
+
+  .header p {
+    font-size: 13px;
+
+    line-height: 1.5;
+  }
+
+  .form {
+    gap: 14px;
+  }
+
+  .inputGroup input {
+    font-size: 16px;
+
+    padding: 12px;
+  }
+
+  .form button {
+    padding: 14px;
+  }
+}

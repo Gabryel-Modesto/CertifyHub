@@ -1,0 +1,31 @@
+.footer {
+  width: 100%;
+
+  padding: 20px;
+
+  text-align: center;
+
+  border-top: 1px solid #dbe3f0;
+
+  color: #9ca3af;
+
+  font-size: 13px;
+
+  box-sizing: border-box;
+}
+
+.footer p {
+  margin: 0;
+
+  line-height: 1.8;
+}
+
+/* RESPONSIVIDADE */
+
+@media (max-width: 500px) {
+  .footer {
+    padding: 16px 20px;
+
+    font-size: 12px;
+  }
+}

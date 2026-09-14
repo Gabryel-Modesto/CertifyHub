@@ -1,0 +1,23 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f7fb;
+
+}
+
+.content {
+    flex: 1;
+    padding: 40px;
+
+}
+
+.content h1 {
+    margin: 0 0 10px;
+    color: #1f2937;
+
+}
+
+.content p {
+    color: #6b7280;
+
+}

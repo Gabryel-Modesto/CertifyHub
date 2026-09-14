@@ -1,0 +1,259 @@
+.container {
+  min-height: 100vh;
+
+  display: flex;
+
+  flex-direction: column;
+
+  background-color: #eaf2ff;
+}
+
+.login {
+  flex: 1;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  padding: 40px 20px;
+}
+
+.card {
+  width: 100%;
+
+  max-width: 400px;
+
+  background-color: #ffffff;
+
+  padding: 40px;
+
+  border-radius: 16px;
+
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.15);
+
+  box-sizing: border-box;
+}
+
+/* HEADER */
+
+.header {
+  text-align: center;
+
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  color: #2563eb;
+
+  font-size: 38px;
+
+  font-weight: 700;
+
+  margin: 0 0 10px;
+}
+
+.header h2 {
+  color: #374151;
+
+  font-size: 20px;
+
+  font-weight: 500;
+
+  margin: 0;
+}
+
+/* FORMULÁRIO */
+
+.form {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+.inputGroup {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+.inputGroup label {
+  font-size: 14px;
+
+  font-weight: 600;
+
+  color: #374151;
+}
+
+.inputGroup input {
+  width: 100%;
+
+  padding: 13px;
+
+  border: 1px solid #d1d5db;
+
+  border-radius: 8px;
+
+  font-size: 15px;
+
+  background-color: #ffffff;
+
+  color: #1f2937;
+
+  outline: none;
+
+  box-sizing: border-box;
+}
+
+.inputGroup input::placeholder {
+  color: #9ca3af;
+}
+
+.inputGroup input:focus {
+  border-color: #2563eb;
+
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+/* ESQUECI MINHA SENHA */
+
+.forgotPassword {
+  text-align: right;
+
+  margin-top: -10px;
+}
+
+.forgotPassword a {
+  color: #2563eb;
+
+  font-size: 14px;
+
+  text-decoration: none;
+}
+
+.forgotPassword a:hover {
+  text-decoration: underline;
+}
+
+/* BOTÃO */
+
+.form button {
+  width: 100%;
+
+  padding: 13px;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background-color: #2563eb;
+
+  color: #ffffff;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.form button:hover {
+  background-color: #1d4ed8;
+}
+
+/* CADASTRO */
+
+.register {
+  margin-top: 25px;
+
+  text-align: center;
+}
+
+.register p {
+  margin-bottom: 8px;
+
+  font-size: 14px;
+
+  color: #6b7280;
+}
+
+.register a {
+  color: #2563eb;
+
+  font-weight: 600;
+
+  text-decoration: none;
+}
+
+.register a:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 768px) {
+  .login {
+    padding: 30px 20px;
+  }
+
+  .card {
+    max-width: 420px;
+
+    padding: 35px;
+  }
+}
+
+/* =========================
+   CELULAR
+========================= */
+
+@media (max-width: 500px) {
+  .login {
+    padding: 20px 15px;
+  }
+
+  .card {
+    padding: 30px 20px;
+
+    border-radius: 12px;
+  }
+
+  .header {
+    margin-bottom: 25px;
+  }
+
+  .header h1 {
+    font-size: 32px;
+  }
+
+  .header h2 {
+    font-size: 18px;
+  }
+
+  .form {
+    gap: 18px;
+  }
+
+  .inputGroup input {
+    font-size: 16px;
+
+    padding: 12px;
+  }
+
+  .form button {
+    padding: 14px;
+  }
+
+  .forgotPassword a {
+    font-size: 13px;
+  }
+}

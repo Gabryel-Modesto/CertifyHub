@@ -1,42 +1,27 @@
 import dotenv from "dotenv";
-dotenv.config();
+import { Pool } from "pg";
 
-process.env.DB_HOST
-process.env.DB_PORT
-process.env.DB_USER
-process.env.DB_PASSWORD
-process.env.DB_NAME
+dotenv.config({
+  path: "./backend/.env",
+});
 
-async function connect(){
-    if(global.connection){
-        return global.connection.connect();
-    }
+console.log("HOST:", process.env.DB_HOST);
+console.log("USER:", process.env.DB_USER);
+console.log("PASSWORD EXISTE:", !!process.env.DB_PASSWORD);
+console.log("DATABASE:", process.env.DB_NAME);
 
-    const {Pool} = await import('pg');
-    const pool = new Pool({
-        host: process.env.DB_HOST,
-        port: process.env.DB_PORT,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME
-    });
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+});
 
-    const client = await pool.connect();
-    console.log("Criou o pool de conexões com o banco de dados");
+async function connect() {
+  const client = await pool.connect();
 
-    const res = await client.query('SELECT NOW()');
-    console.log(res.rows[0]);
-    client.release();
-
-    global.connection = pool;
-    return  pool.connect();
-
-};
-
-connect();
+  return client;
+}
 
 export { connect };
-
-
-
-
