@@ -6,8 +6,14 @@ import {
   incrementLoginAttempts,
   resetLoginAttempts,
   blockUser,
+  saveResetToken,
+  selectUserByResetToken,
+  updatePassword,
 } from "../model/userModel.js";
+
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+
 const createUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -138,9 +144,70 @@ const loginUser = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await selectUserByEmail(email);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "Usuário não encontrado",
+      });
+    }
+
+    // Gerando token aleatório
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    await saveResetToken(user.id_user, token);
+
+    console.log("Token de recuperação:", token);
+
+    return res.status(200).json({
+      message: "Token de recuperação gerado com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao recuperar senha:", error);
+
+    return res.status(500).json({
+      message: "Erro ao solicitar recuperação de senha",
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    const user = await selectUserByResetToken(token);
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Token inválido ou expirado",
+      });
+    }
+
+    const hashPassword = await bcrypt.hash(password, 10);
+    await updatePassword(user.id_user, hashPassword);
+
+    return res.status(200).json({
+      message: "Senha alterada com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao redefinir senha: ", error);
+
+    return res.status(500).json({
+      message: "Erro ao redefinir senha",
+    });
+  }
+};
+
 export default {
   createUser,
   getUsers,
   getUserById,
   loginUser,
+  forgotPassword,
+  resetPassword,
 };

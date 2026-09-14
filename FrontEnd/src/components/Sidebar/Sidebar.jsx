@@ -1,34 +1,46 @@
 import styles from "./Sidebar.module.css";
 
+import { Link, useNavigate } from "react-router-dom";
+
 function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    navigate("/");
+  };
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.logo}>
         <h1>CertifyHub</h1>
       </div>
 
+      {/* MENU PRINCIPAL */}
+
       <nav className={styles.menu}>
-        <a href="#">
+        <Link to="/dashboard">
           <span>🏠</span>
           Dashboard
-        </a>
+        </Link>
 
-        <a href="#">
+        <Link to="/certificates">
           <span>📜</span>
           Certificados
-        </a>
-
-        <a href="#">
-          <span>👤</span>
-          Perfil
-        </a>
+        </Link>
       </nav>
 
+      {/* MENU INFERIOR */}
+
       <div className={styles.bottomMenu}>
-        <a href="#">
+        <button onClick={() => navigate("/profile")}>
+          <span>👤</span>
+          Perfil
+        </button>
+
+        <button onClick={handleLogout}>
           <span>🚪</span>
           Sair
-        </a>
+        </button>
       </div>
     </aside>
   );

@@ -42,6 +42,28 @@ async function blockUser(id) {
     return res.rows[0]    
 };
 
+async function saveResetToken(id, token) {
+    const client = await connect();
+
+    const res = await client.query("UPDATE users SET reset_token = $1, reset_token_expires = NOW() + INTERVAL '120 seconds' WHERE id_user = $2 RETURNING *", [token, id]);
+    return res.rows[0]
+}
+
+async function selectUserByResetToken(token) {
+
+    const client = await connect();
+    const res = await client.query("SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()",[token]);
+    return res.rows[0];
+
+}
+
+async function updatePassword(id, password){
+    const client = await connect();
+
+    const res = await client.query("UPDATE users SET password_user = $1, reset_token = NULL, reset_token_expires = NULL WHERE id_user = $2 RETURNING *", [password, id]);
+    return res.rows[0]
+};
+
 export  {
     selectUsers,
     selectedUserByid,
@@ -49,6 +71,9 @@ export  {
     selectUserByEmail,
     incrementLoginAttempts,
     resetLoginAttempts,
-    blockUser
+    blockUser,
+    saveResetToken,
+    selectUserByResetToken,
+    updatePassword
 }
 

@@ -1,0 +1,314 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fb;
+}
+
+.content {
+  flex: 1;
+  padding: 30px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+/* HEADER */
+
+.header {
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  margin: 0 0 5px;
+  color: #1f2937;
+  font-size: 28px;
+}
+
+.header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+/* CARD */
+
+.card {
+  width: 100%;
+  max-width: 800px;
+  background-color: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+/* PERFIL */
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 25px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar span {
+  font-size: 40px;
+}
+
+.profileName {
+  min-width: 0;
+}
+
+.profileName h2 {
+  margin: 0 0 5px;
+  color: #1f2937;
+  font-size: 22px;
+  overflow-wrap: break-word;
+}
+
+.profileName p {
+  margin: 0;
+  color: #6b7280;
+  overflow-wrap: break-word;
+}
+
+/* INFORMAÇÕES */
+
+.section {
+  padding: 25px 0;
+}
+
+.section h3 {
+  margin: 0 0 20px;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.infoItem span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.infoItem strong {
+  color: #1f2937;
+  font-size: 15px;
+  overflow-wrap: break-word;
+}
+
+/* AÇÕES */
+
+.actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 25px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.actions button {
+  padding: 11px 18px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+/* EDITAR */
+
+.editButton {
+  background-color: #2563eb;
+  color: white;
+}
+
+.editButton:hover {
+  background-color: #1d4ed8;
+}
+
+/* ALTERAR SENHA */
+
+.passwordButton {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.passwordButton:hover {
+  background-color: #e5e7eb;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+  .content {
+    padding: 30px;
+  }
+
+  .card {
+    max-width: 700px;
+  }
+}
+
+/* =========================================
+   CELULAR
+========================================= */
+
+@media (max-width: 600px) {
+  .content {
+    padding: 20px 15px;
+  }
+
+  /* HEADER */
+
+  .header {
+    margin-bottom: 15px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .header p {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  /* CARD */
+
+  .card {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  /* PERFIL */
+
+  .profileHeader {
+    gap: 15px;
+    padding-bottom: 20px;
+  }
+
+  .avatar {
+    width: 65px;
+    height: 65px;
+  }
+
+  .avatar span {
+    font-size: 32px;
+  }
+
+  .profileName h2 {
+    font-size: 19px;
+  }
+
+  .profileName p {
+    font-size: 13px;
+  }
+
+  /* INFORMAÇÕES */
+
+  .section {
+    padding: 20px 0;
+  }
+
+  .section h3 {
+    font-size: 17px;
+    margin-bottom: 18px;
+  }
+
+  .infoGrid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .infoItem span {
+    font-size: 12px;
+  }
+
+  .infoItem strong {
+    font-size: 14px;
+  }
+
+  /* AÇÕES */
+
+  .actions {
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 20px;
+  }
+
+  .actions button {
+    width: 100%;
+    padding: 12px;
+  }
+}
+
+/* =========================================
+   CELULAR PEQUENO
+========================================= */
+
+@media (max-width: 400px) {
+  .content {
+    padding: 15px 10px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+  }
+
+  .header p {
+    font-size: 13px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .profileHeader {
+    gap: 12px;
+  }
+
+  .avatar {
+    width: 55px;
+    height: 55px;
+  }
+
+  .avatar span {
+    font-size: 28px;
+  }
+
+  .profileName h2 {
+    font-size: 17px;
+  }
+
+  .profileName p {
+    font-size: 12px;
+  }
+}

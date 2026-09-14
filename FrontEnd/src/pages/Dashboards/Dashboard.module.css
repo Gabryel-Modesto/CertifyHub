@@ -1,23 +1,217 @@
 .container {
-    display: flex;
-    min-height: 100vh;
-    background-color: #f5f7fb;
-
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f7fb;
 }
 
 .content {
-    flex: 1;
-    padding: 40px;
-
+  flex: 1;
+  padding: 40px;
 }
 
-.content h1 {
-    margin: 0 0 10px;
-    color: #1f2937;
+/* Cabeçalho */
 
+.header {
+  margin-bottom: 35px;
 }
 
-.content p {
-    color: #6b7280;
+.header h1 {
+  margin: 0 0 10px;
+  color: #1f2937;
+}
 
+.header p {
+  margin: 0;
+  color: #6b7280;
+}
+
+/* Cards de estatísticas */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.statCard {
+  background-color: white;
+  padding: 25px;
+  border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.icon {
+  font-size: 32px;
+}
+
+.statCard p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.statCard h2 {
+  margin: 5px 0 0;
+  color: #1f2937;
+}
+
+/* Certificados recentes */
+
+.recent {
+  width: 100%;
+}
+
+.recentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 20px;
+}
+
+.recentHeader h2 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.recentHeader button {
+  background: none;
+  border: none;
+
+  color: #2563eb;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.recentHeader button:hover {
+  text-decoration: underline;
+}
+
+/* Grid dos certificados */
+
+.certificateGrid {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+}
+
+/* Card do certificado */
+
+.certificateCard {
+  background-color: white;
+
+  border-radius: 12px;
+
+  overflow: hidden;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.certificateCard:hover {
+  transform: translateY(-5px);
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+
+  cursor: pointer;
+}
+
+/* Área da imagem */
+
+.certificateImage {
+  height: 180px;
+
+  background-color: #f3f4f6;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+.certificateImage span {
+  font-size: 50px;
+}
+
+/* Informações */
+
+.certificateInfo {
+  padding: 20px;
+}
+
+.certificateInfo h3 {
+  margin: 0 0 8px;
+
+  color: #1f2937;
+}
+
+.certificateInfo p {
+  margin: 0 0 15px;
+
+  color: #6b7280;
+
+  font-size: 14px;
+}
+
+/* Categoria e carga horária */
+
+.certificateDetails {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  gap: 10px;
+}
+
+.certificateDetails span {
+  background-color: #eff6ff;
+
+  color: #2563eb;
+
+  padding: 5px 10px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+
+  white-space: nowrap;
+}
+
+/* Responsividade */
+
+@media (max-width: 1000px) {
+  .certificateGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .content {
+    padding: 25px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .certificateGrid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1,105 +1,190 @@
 .sidebar {
   width: 250px;
-
   min-height: 100vh;
-
   background-color: #ffffff;
-
   border-right: 1px solid #dbe3f0;
-
   display: flex;
-
   flex-direction: column;
+  flex-shrink: 0;
 }
 
 /* LOGO */
-
 .logo {
   padding: 30px 25px;
-
   border-bottom: 1px solid #dbe3f0;
 }
 
 .logo h1 {
   margin: 0;
-
   color: #2563eb;
-
   font-size: 26px;
-
   font-weight: 700;
 }
 
-/* MENU */
-
+/* MENU PRINCIPAL */
 .menu {
   display: flex;
-
   flex-direction: column;
-
   padding: 20px 15px;
-
   gap: 8px;
 }
 
 .menu a {
   display: flex;
-
   align-items: center;
-
   gap: 12px;
-
   padding: 12px 15px;
-
   border-radius: 8px;
-
   text-decoration: none;
-
   color: #4b5563;
-
   font-size: 15px;
-
   font-weight: 500;
-
   transition: 0.2s;
 }
 
 .menu a:hover {
   background-color: #eaf2ff;
-
   color: #2563eb;
 }
 
 /* MENU INFERIOR */
-
 .bottomMenu {
   margin-top: auto;
-
   padding: 20px 15px;
-
   border-top: 1px solid #dbe3f0;
-}
-
-.bottomMenu a {
   display: flex;
-
-  align-items: center;
-
-  gap: 12px;
-
-  padding: 12px 15px;
-
-  border-radius: 8px;
-
-  text-decoration: none;
-
-  color: #ef4444;
-
-  font-size: 15px;
-
-  font-weight: 500;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.bottomMenu a:hover {
+/* BOTÕES PERFIL E SAIR */
+.bottomMenu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  color: #4b5563;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: 0.2s;
+}
+
+/* PERFIL */
+.bottomMenu button:first-child:hover {
+  background-color: #eaf2ff;
+  color: #2563eb;
+}
+
+/* SAIR */
+.bottomMenu button:last-child {
+  color: #ef4444;
+}
+
+.bottomMenu button:last-child:hover {
   background-color: #fef2f2;
+  color: #ef4444;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 210px;
+  }
+
+  .logo {
+    padding: 25px 20px;
+  }
+
+  .logo h1 {
+    font-size: 23px;
+  }
+
+  .menu {
+    padding: 20px 12px;
+  }
+
+  .bottomMenu {
+    padding: 20px 12px;
+  }
+
+  .menu a,
+  .bottomMenu button {
+    padding: 11px 12px;
+    font-size: 14px;
+  }
+}
+
+/* =========================================
+   CELULAR
+========================================= */
+
+@media (max-width: 600px) {
+  .sidebar {
+    width: 70px;
+    min-height: 100vh;
+  }
+
+  /* LOGO */
+  .logo {
+    padding: 20px 10px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .logo h1 {
+    font-size: 0;
+  }
+
+  .logo h1::after {
+    content: "C";
+    font-size: 26px;
+    color: #2563eb;
+  }
+
+  /* MENU */
+  .menu {
+    padding: 15px 8px;
+    gap: 8px;
+  }
+
+  .menu a {
+    justify-content: center;
+    padding: 12px 8px;
+  }
+
+  .menu a span {
+    font-size: 20px;
+  }
+
+  .menu a {
+    font-size: 0;
+  }
+
+  /* MENU INFERIOR */
+  .bottomMenu {
+    padding: 15px 8px;
+    gap: 8px;
+  }
+
+  .bottomMenu button {
+    justify-content: center;
+    padding: 12px 8px;
+  }
+
+  .bottomMenu button span {
+    font-size: 20px;
+  }
+
+  .bottomMenu button {
+    font-size: 0;
+  }
 }
