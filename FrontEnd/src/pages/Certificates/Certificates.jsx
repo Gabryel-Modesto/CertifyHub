@@ -1,56 +1,53 @@
 import styles from "./Certificates.module.css";
+
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 function Certificates() {
   const navigate = useNavigate();
 
-  // Abre os detalhes do certificado
+  const [certificates, setCertificates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Buscar certificados da API
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/certificates");
+
+        setCertificates(response.data);
+      } catch (error) {
+        console.error(error);
+
+        setError("Erro ao carregar certificados.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCertificates();
+  }, []);
+
+  // Abrir detalhes do certificado
   const handleCertificate = (id) => {
     navigate(`/certificates/${id}`);
+  };
+
+  // Ir para cadastro
+  const handleRegister = () => {
+    navigate("/registerCertificate");
   };
 
   // Botão de download
   const handleDownload = (event, certificate) => {
     event.stopPropagation();
 
-    console.log("Baixando certificado:", certificate.name);
+    console.log("Baixando certificado:", certificate.name_certificate);
   };
-
-  const certificates = [
-    {
-      id: 1,
-      name: "Java Completo",
-      institution: "Rocketseat",
-      category: "Tecnologia",
-      workload: "40h",
-    },
-
-    {
-      id: 2,
-      name: "React",
-      institution: "Hashtag Treinamentos",
-      category: "Tecnologia",
-      workload: "30h",
-    },
-
-    {
-      id: 3,
-      name: "Oracle Database",
-      institution: "Oracle",
-      category: "Banco de Dados",
-      workload: "20h",
-    },
-
-    {
-      id: 4,
-      name: "JavaScript",
-      institution: "Rocketseat",
-      category: "Tecnologia",
-      workload: "35h",
-    },
-  ];
 
   return (
     <div className={styles.container}>
@@ -60,9 +57,19 @@ function Certificates() {
         {/* HEADER */}
 
         <div className={styles.header}>
-          <h1>Meus Certificados</h1>
+          <div>
+            <h1>Meus Certificados</h1>
 
-          <p>Gerencie todos os seus certificados em um só lugar.</p>
+            <p>Gerencie todos os seus certificados em um só lugar.</p>
+          </div>
+
+          <button
+            type="button"
+            className={styles.registerButton}
+            onClick={handleRegister}
+          >
+            + Cadastrar certificado
+          </button>
         </div>
 
         {/* FILTROS */}
@@ -86,47 +93,79 @@ function Certificates() {
           </select>
         </section>
 
+        {/* CARREGANDO */}
+
+        {loading && <p>Carregando certificados...</p>}
+
+        {/* ERRO */}
+
+        {error && <p>{error}</p>}
+
         {/* CERTIFICADOS */}
 
-        <section className={styles.certificateGrid}>
-          {certificates.map((certificate) => (
-            <div
-              className={styles.certificateCard}
-              key={certificate.id}
-              onClick={() => handleCertificate(certificate.id)}
-            >
-              {/* IMAGEM / PREVIEW */}
+        {!loading && !error && certificates.length > 0 && (
+          <section className={styles.certificateGrid}>
+            {certificates.map((certificate) => (
+              <div
+                className={styles.certificateCard}
+                key={certificate.id_certificate}
+                onClick={() => handleCertificate(certificate.id_certificate)}
+              >
+                {/* IMAGEM / PREVIEW */}
 
-              <div className={styles.certificateImage}>
-                <span>📜</span>
-              </div>
-
-              {/* INFORMAÇÕES */}
-
-              <div className={styles.certificateInfo}>
-                <h3>{certificate.name}</h3>
-
-                <p>{certificate.institution}</p>
-
-                <div className={styles.certificateDetails}>
-                  <span>{certificate.category}</span>
-
-                  <span>{certificate.workload}</span>
+                <div className={styles.certificateImage}>
+                  <span>📜</span>
                 </div>
 
-                {/* DOWNLOAD */}
+                {/* INFORMAÇÕES */}
 
-                <button
-                  type="button"
-                  className={styles.downloadButton}
-                  onClick={(event) => handleDownload(event, certificate)}
-                >
-                  ⬇ Baixar certificado
-                </button>
+                <div className={styles.certificateInfo}>
+                  <h3>{certificate.name_certificate}</h3>
+
+                  <p>{certificate.institution_certificate}</p>
+
+                  {/* DETALHES */}
+
+                  <div className={styles.certificateDetails}>
+                    <span>{certificate.category_certificate}</span>
+
+                    <span>{certificate.hours_certificate}h</span>
+                  </div>
+
+                  {/* DOWNLOAD */}
+
+                  <button
+                    type="button"
+                    className={styles.downloadButton}
+                    onClick={(event) => handleDownload(event, certificate)}
+                  >
+                    ⬇ Baixar certificado
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </section>
+            ))}
+          </section>
+        )}
+
+        {/* NENHUM CERTIFICADO */}
+
+        {!loading && !error && certificates.length === 0 && (
+          <div className={styles.emptyState}>
+            <span>📜</span>
+
+            <h2>Nenhum certificado cadastrado</h2>
+
+            <p>Comece cadastrando seu primeiro certificado.</p>
+
+            <button
+              type="button"
+              className={styles.registerButton}
+              onClick={handleRegister}
+            >
+              + Cadastrar certificado
+            </button>
+          </div>
+        )}
       </main>
     </div>
   );
