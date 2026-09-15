@@ -1,0 +1,74 @@
+.emptyState {
+  background-color: white;
+
+  border-radius: 12px;
+
+  padding: 50px 30px;
+
+  text-align: center;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.emptyState span {
+  display: block;
+
+  font-size: 50px;
+
+  margin-bottom: 15px;
+}
+
+.emptyState h2 {
+  margin: 0 0 8px;
+
+  color: #1f2937;
+}
+
+.emptyState p {
+  margin: 0 0 20px;
+
+  color: #6b7280;
+}
+
+.registerButton {
+  background-color: #000;
+
+  color: #fff;
+
+  border: none;
+
+  border-radius: 8px;
+
+  padding: 12px 20px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.registerButton:hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+  .emptyState {
+    padding: 40px 20px;
+  }
+
+  .emptyState h2 {
+    font-size: 20px;
+  }
+
+  .emptyState p {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .registerButton {
+    width: 100%;
+  }
+}

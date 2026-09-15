@@ -1,19 +1,21 @@
 import styles from "./Certificates.module.css";
-
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
-
+import CertificateCard from "../../components/Certificate/CertificateCard/CertificateCard.jsx";
+import CertificateFilters from "../../components/Certificate/CertificateFilters/CertificateFilters.jsx";
+import CertificateHeader from "../../components/Certificate/CertificateHeader/CertificateHeader.jsx";
+import CertificateEmptyState from "../../components/Certificate/CertificateEmptyState/CertificateEmptyState.jsx";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
-
 function Certificates() {
   const navigate = useNavigate();
-
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("Todas");
+  const [sort, setSort] = useState("recentes");
 
-  // Buscar certificados da API
   useEffect(() => {
     const fetchCertificates = async () => {
       try {
@@ -32,139 +34,77 @@ function Certificates() {
     fetchCertificates();
   }, []);
 
-  // Abrir detalhes do certificado
   const handleCertificate = (id) => {
     navigate(`/certificates/${id}`);
   };
 
-  // Ir para cadastro
   const handleRegister = () => {
     navigate("/registerCertificate");
   };
 
-  // Botão de download
-  const handleDownload = (event, certificate) => {
-    event.stopPropagation();
+  const filteredCertificates = certificates
+    .filter((certificate) => {
+      const searchText = search.toLowerCase();
 
-    console.log("Baixando certificado:", certificate.name_certificate);
-  };
+      return (
+        certificate.name_certificate.toLowerCase().includes(searchText) ||
+        certificate.institution_certificate.toLowerCase().includes(searchText)
+      );
+    })
+
+    .filter((certificate) => {
+      if (category === "Todas") {
+        return true;
+      }
+
+      return certificate.category_certificate === category;
+    })
+
+    .sort((a, b) => {
+      if (sort === "recentes") {
+        return new Date(b.date_conclusion) - new Date(a.date_conclusion);
+      }
+
+      if (sort === "antigos") {
+        return new Date(a.date_conclusion) - new Date(b.date_conclusion);
+      }
+
+      if (sort === "az") {
+        return a.name_certificate.localeCompare(b.name_certificate);
+      }
+
+      if (sort === "za") {
+        return b.name_certificate.localeCompare(a.name_certificate);
+      }
+
+      return 0;
+    });
 
   return (
     <div className={styles.container}>
       <Sidebar />
 
       <main className={styles.content}>
-        {/* HEADER */}
-
-        <div className={styles.header}>
-          <div>
-            <h1>Meus Certificados</h1>
-
-            <p>Gerencie todos os seus certificados em um só lugar.</p>
-          </div>
-
-          <button
-            type="button"
-            className={styles.registerButton}
-            onClick={handleRegister}
-          >
-            + Cadastrar certificado
-          </button>
-        </div>
-
-        {/* FILTROS */}
-
-        <section className={styles.filters}>
-          <input type="text" placeholder="🔍 Buscar certificado..." />
-
-          <select>
-            <option>Todas as categorias</option>
-            <option>Tecnologia</option>
-            <option>Banco de Dados</option>
-            <option>Gestão</option>
-            <option>Idiomas</option>
-          </select>
-
-          <select>
-            <option>Mais recentes</option>
-            <option>Mais antigos</option>
-            <option>Nome A-Z</option>
-            <option>Nome Z-A</option>
-          </select>
-        </section>
-
-        {/* CARREGANDO */}
+        <CertificateHeader onRegister={handleRegister} />
+        <CertificateFilters search={search} setSearch={setSearch} category={category} setCategory={setCategory} sort={sort} setSort={setSort}/>
 
         {loading && <p>Carregando certificados...</p>}
-
-        {/* ERRO */}
-
         {error && <p>{error}</p>}
-
-        {/* CERTIFICADOS */}
-
-        {!loading && !error && certificates.length > 0 && (
+        {!loading && !error && filteredCertificates.length > 0 && (
           <section className={styles.certificateGrid}>
-            {certificates.map((certificate) => (
-              <div
-                className={styles.certificateCard}
-                key={certificate.id_certificate}
-                onClick={() => handleCertificate(certificate.id_certificate)}
-              >
-                {/* IMAGEM / PREVIEW */}
+            {filteredCertificates.map((certificate) => (
+              <CertificateCard key={certificate.id_certificate} certificate={certificate} onClick={handleCertificate} /> 
+              ))} </section> )}
 
-                <div className={styles.certificateImage}>
-                  <span>📜</span>
-                </div>
-
-                {/* INFORMAÇÕES */}
-
-                <div className={styles.certificateInfo}>
-                  <h3>{certificate.name_certificate}</h3>
-
-                  <p>{certificate.institution_certificate}</p>
-
-                  {/* DETALHES */}
-
-                  <div className={styles.certificateDetails}>
-                    <span>{certificate.category_certificate}</span>
-
-                    <span>{certificate.hours_certificate}h</span>
-                  </div>
-
-                  {/* DOWNLOAD */}
-
-                  <button
-                    type="button"
-                    className={styles.downloadButton}
-                    onClick={(event) => handleDownload(event, certificate)}
-                  >
-                    ⬇ Baixar certificado
-                  </button>
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* NENHUM CERTIFICADO */}
+        {!loading &&
+          !error &&
+          certificates.length > 0 &&
+          filteredCertificates.length === 0 && (
+            <CertificateEmptyState type="filter" />
+          )}
 
         {!loading && !error && certificates.length === 0 && (
-          <div className={styles.emptyState}>
-            <span>📜</span>
-
-            <h2>Nenhum certificado cadastrado</h2>
-
-            <p>Comece cadastrando seu primeiro certificado.</p>
-
-            <button
-              type="button"
-              className={styles.registerButton}
-              onClick={handleRegister}
-            >
-              + Cadastrar certificado
-            </button>
-          </div>
+          <CertificateEmptyState type="empty" onRegister={handleRegister} />
         )}
       </main>
     </div>

@@ -1,19 +1,27 @@
 import multer from "multer";
-import path from 'path';
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, "backend/uploads/certificates")
-    },
+  destination: (req, file, cb) => {
+    cb(
+      null,
+      path.join(__dirname, "../../uploads/certificates")
+    );
+  },
 
-    filename: (req, file, cb) => {
-        const uniqueName = `${Date.now()}-${file.originalname}`;
-        cb(null, uniqueName);
-    }
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+
+    cb(null, uniqueName);
+  }
 });
 
 const upload = multer({
-    storage
+  storage
 });
 
 export default upload;

@@ -1,0 +1,152 @@
+/* =========================================
+   CARD
+========================================= */
+
+.certificateCard {
+  background-color: white;
+  border-radius: 12px;
+  overflow: hidden;
+
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+
+  transition: 0.2s;
+
+  min-width: 0;
+}
+
+.certificateCard:hover {
+  transform: translateY(-5px);
+
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+
+  cursor: pointer;
+}
+
+/* =========================================
+   IMAGEM
+========================================= */
+
+.certificateImage {
+  width: 100%;
+  height: 220px;
+
+  background-color: #f3f4f6;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+}
+
+.certificateImage img {
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+
+  display: block;
+}
+
+.certificateImage span {
+  font-size: 50px;
+}
+
+/* =========================================
+   INFORMAÇÕES
+========================================= */
+
+.certificateInfo {
+  padding: 20px;
+}
+
+.certificateInfo h3 {
+  margin: 0 0 8px;
+
+  color: #1f2937;
+
+  overflow-wrap: break-word;
+}
+
+.certificateInfo p {
+  margin: 0 0 15px;
+
+  color: #6b7280;
+
+  overflow-wrap: break-word;
+}
+
+/* =========================================
+   DETALHES
+========================================= */
+
+.certificateDetails {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.certificateDetails span {
+  background-color: #eff6ff;
+  color: #2563eb;
+
+  padding: 5px 10px;
+
+  border-radius: 20px;
+
+  font-size: 12px;
+}
+
+/* =========================================
+   DOWNLOAD
+========================================= */
+
+.downloadContainer {
+  display: flex;
+
+  justify-content: center;
+
+  margin-top: 15px;
+}
+
+/* =========================================
+   RESPONSIVO
+========================================= */
+
+@media (max-width: 600px) {
+  .certificateImage {
+    height: 200px;
+  }
+
+  .certificateInfo {
+    padding: 18px;
+  }
+
+  .certificateInfo h3 {
+    font-size: 17px;
+  }
+
+  .certificateInfo p {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .certificateImage {
+    height: 170px;
+  }
+
+  .certificateInfo {
+    padding: 15px;
+  }
+
+  .certificateDetails span {
+    font-size: 11px;
+
+    padding: 5px 8px;
+  }
+}

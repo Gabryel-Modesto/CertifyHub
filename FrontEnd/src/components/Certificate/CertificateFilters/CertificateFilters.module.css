@@ -1,0 +1,50 @@
+.filters {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.filters input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 15px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  font-size: 15px;
+
+  box-sizing: border-box;
+}
+
+.filters select {
+  padding: 12px 15px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+
+  background-color: white;
+
+  font-size: 15px;
+
+  cursor: pointer;
+
+  box-sizing: border-box;
+}
+
+.filters input:focus,
+.filters select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+@media (max-width: 800px) {
+  .filters {
+    flex-direction: column;
+  }
+
+  .filters input,
+  .filters select {
+    width: 100%;
+  }
+}

@@ -1,7 +1,8 @@
 import styles from "./CertificateDetails.module.css";
-
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
-
+import CertificateBtnEdition from "../../components/Certificate/CertificateForm/CertificateBtnEdition/CertificateBtnEdition.jsx";
+import CertificateBtnDownload from "../../components/Certificate/CertificateForm/CertificateBtnDownload/CertificateBtnDownload.jsx";
+import CertificateBtnDelete from "../../components/Certificate/CertificateForm/CertificateBtnDelete/CertificateBtnDelete.jsx";
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -18,20 +19,6 @@ function CertificateDetails() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [formData, setFormData] = useState({
-    name_certificate: "",
-    institution_certificate: "",
-    category_certificate: "",
-    date_conclusion: "",
-    date_validity: "",
-    hours_certificate: "",
-    certification_code: "",
-    validation_link: "",
-    description: "",
-    file_path: null,
-  });
-
-  // Buscar certificado
   useEffect(() => {
     const fetchCertificate = async () => {
       try {
@@ -40,23 +27,6 @@ function CertificateDetails() {
         );
 
         setCertificate(response.data);
-
-        setFormData({
-          name_certificate: response.data.name_certificate || "",
-          institution_certificate: response.data.institution_certificate || "",
-          category_certificate: response.data.category_certificate || "",
-          date_conclusion: response.data.date_conclusion
-            ? response.data.date_conclusion.substring(0, 10)
-            : "",
-          date_validity: response.data.date_validity
-            ? response.data.date_validity.substring(0, 10)
-            : "",
-          hours_certificate: response.data.hours_certificate || "",
-          certification_code: response.data.certification_code || "",
-          validation_link: response.data.validation_link || "",
-          description: response.data.description || "",
-          file_path: response.data.file_path || null,
-        });
       } catch (error) {
         console.error(error);
 
@@ -73,67 +43,70 @@ function CertificateDetails() {
     fetchCertificate();
   }, [id]);
 
-  // Alterar campos
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  // =========================================
+  // ATIVAR EDIÇÃO
+  // =========================================
 
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  // Ativar edição
   const handleEdit = () => {
     setEditing(true);
+    setError("");
   };
 
-  // Cancelar edição
+  // =========================================
+  // CANCELAR EDIÇÃO
+  // =========================================
+
   const handleCancelEdit = () => {
     setEditing(false);
-
-    setFormData({
-      name_certificate: certificate.name_certificate || "",
-      institution_certificate: certificate.institution_certificate || "",
-      category_certificate: certificate.category_certificate || "",
-      date_conclusion: certificate.date_conclusion
-        ? certificate.date_conclusion.substring(0, 10)
-        : "",
-      date_validity: certificate.date_validity
-        ? certificate.date_validity.substring(0, 10)
-        : "",
-      hours_certificate: certificate.hours_certificate || "",
-      certification_code: certificate.certification_code || "",
-      validation_link: certificate.validation_link || "",
-      description: certificate.description || "",
-      file_path: certificate.file_path || null,
-    });
+    setError("");
   };
 
-  // Salvar alterações
-  const handleSave = async (event) => {
-    event.preventDefault();
+  // =========================================
+  // SALVAR ALTERAÇÕES
+  // =========================================
 
+  const handleSave = async (formData, file) => {
     setSaving(true);
     setError("");
 
     try {
-      const updatedCertificate = {
-        name_certificate: formData.name_certificate,
-        institution_certificate: formData.institution_certificate,
-        category_certificate: formData.category_certificate,
-        date_conclusion: formData.date_conclusion,
-        date_validity: formData.date_validity || null,
-        hours_certificate: Number(formData.hours_certificate),
-        certification_code: formData.certification_code || null,
-        validation_link: formData.validation_link || null,
-        description: formData.description || null,
-        file_path: formData.file_path || null,
-      };
+      const data = new FormData();
+
+      data.append("name_certificate", formData.name_certificate);
+
+      data.append("institution_certificate", formData.institution_certificate);
+
+      data.append("category_certificate", formData.category_certificate);
+
+      data.append("date_conclusion", formData.date_conclusion);
+
+      if (formData.date_validity) {
+        data.append("date_validity", formData.date_validity);
+      }
+
+      data.append("hours_certificate", formData.hours_certificate);
+
+      if (formData.certification_code) {
+        data.append("certification_code", formData.certification_code);
+      }
+
+      if (formData.validation_link) {
+        data.append("validation_link", formData.validation_link);
+      }
+
+      if (formData.description) {
+        data.append("description", formData.description);
+      }
+
+      // Só envia arquivo se o usuário
+      // escolher um novo arquivo
+      if (file) {
+        data.append("file", file);
+      }
 
       const response = await axios.put(
         `http://localhost:3000/certificates/${id}`,
-        updatedCertificate,
+        data,
       );
 
       setCertificate(response.data.certificate);
@@ -142,44 +115,26 @@ function CertificateDetails() {
     } catch (error) {
       console.error(error);
 
-      setError("Erro ao atualizar certificado.");
+      setError(
+        error.response?.data?.message || "Erro ao atualizar certificado.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // Voltar
+  // =========================================
+  // VOLTAR
+  // =========================================
+
   const handleBack = () => {
     navigate("/certificates");
   };
 
-  // Download
-  const handleDownload = () => {
-    console.log("Baixar certificado:", certificate.id_certificate);
-  };
+  // =========================================
+  // LOADING
+  // =========================================
 
-  // Excluir
-  const handleDelete = async () => {
-    const confirmed = window.confirm(
-      "Tem certeza que deseja excluir este certificado?",
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      await axios.delete(`http://localhost:3000/certificates/${id}`);
-
-      navigate("/certificates");
-    } catch (error) {
-      console.error(error);
-
-      setError("Erro ao excluir certificado.");
-    }
-  };
-
-  // Loading
   if (loading) {
     return (
       <div className={styles.container}>
@@ -192,7 +147,10 @@ function CertificateDetails() {
     );
   }
 
-  // Erro
+  // =========================================
+  // ERRO
+  // =========================================
+
   if (error && !certificate) {
     return (
       <div className={styles.container}>
@@ -208,6 +166,10 @@ function CertificateDetails() {
       </div>
     );
   }
+
+  // =========================================
+  // PÁGINA
+  // =========================================
 
   return (
     <div className={styles.container}>
@@ -236,165 +198,45 @@ function CertificateDetails() {
 
         <div className={styles.card}>
           {editing ? (
-            /* =========================================
-               MODO EDIÇÃO
-            ========================================= */
+            // =========================================
+            // COMPONENTE DE EDIÇÃO
+            // =========================================
 
-            <form className={styles.editForm} onSubmit={handleSave}>
-              <div className={styles.editInputGroup}>
-                <label>Nome do certificado</label>
-
-                <input
-                  type="text"
-                  name="name_certificate"
-                  value={formData.name_certificate}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className={styles.editInputGroup}>
-                <label>Instituição</label>
-
-                <input
-                  type="text"
-                  name="institution_certificate"
-                  value={formData.institution_certificate}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className={styles.editRow}>
-                <div className={styles.editInputGroup}>
-                  <label>Data de emissão</label>
-
-                  <input
-                    type="date"
-                    name="date_conclusion"
-                    value={formData.date_conclusion}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-
-                <div className={styles.editInputGroup}>
-                  <label>Data de validade</label>
-
-                  <input
-                    type="date"
-                    name="date_validity"
-                    value={formData.date_validity}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-
-              <div className={styles.editRow}>
-                <div className={styles.editInputGroup}>
-                  <label>Carga horária</label>
-
-                  <input
-                    type="number"
-                    name="hours_certificate"
-                    value={formData.hours_certificate}
-                    onChange={handleChange}
-                    min="1"
-                    required
-                  />
-                </div>
-
-                <div className={styles.editInputGroup}>
-                  <label>Categoria</label>
-
-                  <select
-                    name="category_certificate"
-                    value={formData.category_certificate}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Selecione uma categoria</option>
-
-                    <option value="Tecnologia">Tecnologia</option>
-
-                    <option value="Idiomas">Idiomas</option>
-
-                    <option value="Gestão">Gestão</option>
-
-                    <option value="Outros">Outros</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.editInputGroup}>
-                <label>Código de certificação</label>
-
-                <input
-                  type="text"
-                  name="certification_code"
-                  value={formData.certification_code}
-                  onChange={handleChange}
-                  placeholder="Ex: CERT-2026-001"
-                />
-              </div>
-
-              <div className={styles.editInputGroup}>
-                <label>Link de validação</label>
-
-                <input
-                  type="url"
-                  name="validation_link"
-                  value={formData.validation_link}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                />
-              </div>
-
-              <div className={styles.editInputGroup}>
-                <label>Descrição</label>
-
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Descrição do certificado..."
-                  rows="4"
-                />
-              </div>
-
-              <div className={styles.actions}>
-                <button
-                  type="submit"
-                  className={styles.saveButton}
-                  disabled={saving}
-                >
-                  {saving ? "Salvando..." : "💾 Salvar alterações"}
-                </button>
-
-                <button
-                  type="button"
-                  className={styles.cancelButton}
-                  onClick={handleCancelEdit}
-                  disabled={saving}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
+            <CertificateBtnEdition
+              certificate={certificate}
+              onSave={handleSave}
+              onCancel={handleCancelEdit}
+              saving={saving}
+            />
           ) : (
-            /* =========================================
-               MODO VISUALIZAÇÃO
-            ========================================= */
+            // =========================================
+            // MODO VISUALIZAÇÃO
+            // =========================================
 
             <>
               {/* PREVIEW */}
 
               <div className={styles.certificatePreview}>
-                <div className={styles.placeholder}>
-                  <span>📜</span>
+                {certificate.file_path ? (
+                  certificate.file_path.toLowerCase().endsWith(".pdf") ? (
+                    <iframe
+                      src={`http://localhost:3000${certificate.file_path}`}
+                      title={certificate.name_certificate}
+                      className={styles.pdfPreview}
+                    />
+                  ) : (
+                    <img
+                      src={`http://localhost:3000${certificate.file_path}`}
+                      alt={certificate.name_certificate}
+                    />
+                  )
+                ) : (
+                  <div className={styles.placeholder}>
+                    <span>📜</span>
 
-                  <p>Preview do certificado</p>
-                </div>
+                    <p>Preview do certificado</p>
+                  </div>
+                )}
               </div>
 
               {/* INFORMAÇÕES */}
@@ -466,20 +308,13 @@ function CertificateDetails() {
               {/* AÇÕES */}
 
               <div className={styles.actions}>
-                <button
-                  className={styles.downloadButton}
-                  onClick={handleDownload}
-                >
-                  ⬇ Baixar certificado
-                </button>
+                <CertificateBtnDownload certificate={certificate} />
 
                 <button className={styles.editButton} onClick={handleEdit}>
                   ✏️ Editar
                 </button>
 
-                <button className={styles.deleteButton} onClick={handleDelete}>
-                  🗑️ Excluir
-                </button>
+                <CertificateBtnDelete id={id} />
               </div>
             </>
           )}

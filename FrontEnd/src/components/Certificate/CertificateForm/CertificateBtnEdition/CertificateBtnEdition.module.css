@@ -1,0 +1,191 @@
+/* =========================================
+   FORMULÁRIO
+========================================= */
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* =========================================
+   GRUPO DE INPUT
+========================================= */
+
+.editInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.editInputGroup label {
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.editInputGroup input,
+.editInputGroup select,
+.editInputGroup textarea {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 8px 11px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+
+  background-color: #ffffff;
+  color: #1f2937;
+
+  font-size: 13px;
+  font-family: inherit;
+
+  transition: 0.2s;
+}
+
+.editInputGroup input:focus,
+.editInputGroup select:focus,
+.editInputGroup textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.08);
+}
+
+.editInputGroup textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+/* =========================================
+   LINHA COM DOIS CAMPOS
+========================================= */
+
+.editRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* =========================================
+   ARQUIVO
+========================================= */
+
+.editInputGroup input[type="file"] {
+  padding: 7px;
+
+  background-color: #f9fafb;
+
+  cursor: pointer;
+}
+
+.fileSelected {
+  margin: 0;
+
+  color: #16a34a;
+  font-size: 11px;
+}
+
+.fileSelected strong {
+  font-weight: 600;
+}
+
+.currentFile {
+  margin: 0;
+
+  color: #6b7280;
+  font-size: 11px;
+}
+
+/* =========================================
+   AÇÕES
+========================================= */
+
+.actions {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  margin-top: 3px;
+}
+
+.actions button {
+  height: 34px;
+
+  padding: 0 14px;
+
+  border-radius: 6px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+/* =========================================
+   SALVAR
+========================================= */
+
+.saveButton {
+  border: none;
+
+  background-color: #16a34a;
+  color: #ffffff;
+}
+
+.saveButton:hover {
+  background-color: #15803d;
+}
+
+.saveButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   CANCELAR
+========================================= */
+
+.cancelButton {
+  border: 1px solid #d1d5db;
+
+  background-color: #ffffff;
+  color: #374151;
+}
+
+.cancelButton:hover {
+  background-color: #f3f4f6;
+}
+
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   CELULAR
+========================================= */
+
+@media (max-width: 600px) {
+  .editForm {
+    gap: 12px;
+  }
+
+  .editRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+}
