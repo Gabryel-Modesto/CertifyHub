@@ -1,5 +1,4 @@
 import styles from "./RegisterCertificate.module.css";
-
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 
 import { useState } from "react";
@@ -19,7 +18,6 @@ const RegisterCertificate = () => {
     certification_code: "",
     validation_link: "",
     description: "",
-    file_path: "",
   });
 
   const [file, setFile] = useState(null);
@@ -54,33 +52,44 @@ const RegisterCertificate = () => {
     setLoading(true);
 
     try {
-      const certificate = {
-        id_user: 1,
+      const data = new FormData();
 
-        name_certificate: formData.name_certificate,
+      data.append("id_user", 1);
 
-        institution_certificate: formData.institution_certificate,
+      data.append("name_certificate", formData.name_certificate);
 
-        category_certificate: formData.category_certificate,
+      data.append("institution_certificate", formData.institution_certificate);
 
-        date_conclusion: formData.date_conclusion,
+      data.append("category_certificate", formData.category_certificate);
 
-        date_validity: formData.date_validity || null,
+      data.append("date_conclusion", formData.date_conclusion);
 
-        hours_certificate: Number(formData.hours_certificate),
+      if (formData.date_validity) {
+        data.append("date_validity", formData.date_validity);
+      }
 
-        certification_code: formData.certification_code || null,
+      data.append("hours_certificate", formData.hours_certificate);
 
-        validation_link: formData.validation_link || null,
+      if (formData.certification_code) {
+        data.append("certification_code", formData.certification_code);
+      }
 
-        description: formData.description || null,
+      if (formData.validation_link) {
+        data.append("validation_link", formData.validation_link);
+      }
 
-        file_path: formData.file_path || null,
-      };
+      if (formData.description) {
+        data.append("description", formData.description);
+      }
+
+      // Adiciona o arquivo
+      if (file) {
+        data.append("file", file);
+      }
 
       const response = await axios.post(
         "http://localhost:3000/certificates",
-        certificate,
+        data,
       );
 
       console.log(response.data);
@@ -97,7 +106,6 @@ const RegisterCertificate = () => {
         certification_code: "",
         validation_link: "",
         description: "",
-        file_path: "",
       });
 
       setFile(null);
@@ -120,7 +128,6 @@ const RegisterCertificate = () => {
 
       <main className={styles.content}>
         {/* HEADER */}
-
         <div className={styles.header}>
           <h1>Cadastrar certificado</h1>
 
@@ -128,11 +135,9 @@ const RegisterCertificate = () => {
         </div>
 
         {/* CARD */}
-
         <div className={styles.card}>
           <form className={styles.form} onSubmit={handleSubmit}>
             {/* NOME */}
-
             <div className={styles.inputGroup}>
               <label>Nome do certificado</label>
 
@@ -147,7 +152,6 @@ const RegisterCertificate = () => {
             </div>
 
             {/* INSTITUIÇÃO */}
-
             <div className={styles.inputGroup}>
               <label>Instituição</label>
 
@@ -162,7 +166,6 @@ const RegisterCertificate = () => {
             </div>
 
             {/* DATAS */}
-
             <div className={styles.row}>
               <div className={styles.inputGroup}>
                 <label>Data de emissão</label>
@@ -189,7 +192,6 @@ const RegisterCertificate = () => {
             </div>
 
             {/* CARGA + CATEGORIA */}
-
             <div className={styles.row}>
               <div className={styles.inputGroup}>
                 <label>Carga horária</label>
@@ -228,7 +230,6 @@ const RegisterCertificate = () => {
             </div>
 
             {/* CÓDIGO DE CERTIFICAÇÃO */}
-
             <div className={styles.inputGroup}>
               <label>Código de certificação</label>
 
@@ -242,7 +243,6 @@ const RegisterCertificate = () => {
             </div>
 
             {/* LINK DE VALIDAÇÃO */}
-
             <div className={styles.inputGroup}>
               <label>Link de validação</label>
 
@@ -256,7 +256,6 @@ const RegisterCertificate = () => {
             </div>
 
             {/* DESCRIÇÃO */}
-
             <div className={styles.inputGroup}>
               <label>Descrição</label>
 
@@ -269,22 +268,7 @@ const RegisterCertificate = () => {
               />
             </div>
 
-            {/* LINK DO ARQUIVO */}
-
-            <div className={styles.inputGroup}>
-              <label>Link do certificado</label>
-
-              <input
-                type="url"
-                name="file_path"
-                placeholder="https://exemplo.com/certificado.pdf"
-                value={formData.file_path}
-                onChange={handleChange}
-              />
-            </div>
-
             {/* ARQUIVO */}
-
             <div className={styles.inputGroup}>
               <label>Arquivo do certificado</label>
 
@@ -296,19 +280,15 @@ const RegisterCertificate = () => {
             </div>
 
             {/* ARQUIVO SELECIONADO */}
-
             {file && <p>Arquivo selecionado: {file.name}</p>}
 
             {/* ERRO */}
-
             {error && <p>{error}</p>}
 
             {/* SUCESSO */}
-
             {success && <p>{success}</p>}
 
             {/* BOTÃO */}
-
             <button type="submit" disabled={loading}>
               {loading ? "Cadastrando..." : "Cadastrar certificado"}
             </button>
