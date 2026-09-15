@@ -8,18 +8,18 @@ import {
   deleteCertificateController
 } from "../controllers/certificateController.js";
 
-const router = express.Router();
+import upload from "../middlewares/upload.js";
 
+const router = express.Router();
 
 router.get("/", getCertificates);
 
 router.get("/:id", getCertificateById);
 
-router.post("/", createCertificate);
+router.post("/",upload.single("file"),createCertificate);
 
 router.put("/:id", updateCertificateController);
 
 router.delete("/:id", deleteCertificateController);
-
 
 export default router;

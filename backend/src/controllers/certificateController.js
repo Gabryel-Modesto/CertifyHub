@@ -44,7 +44,13 @@ async function getCertificateById(req, res) {
 
 async function createCertificate(req, res) {
   try {
-    const certificate = await insertCertificate(req.body);
+    const certificateData = {
+      ...req.body,
+
+      file_path: req.file ? `/uploads/certificates/${req.file.filename}` : null,
+    };
+
+    const certificate = await insertCertificate(certificateData);
 
     res.status(201).json({
       message: "Certificado cadastrado com sucesso.",
