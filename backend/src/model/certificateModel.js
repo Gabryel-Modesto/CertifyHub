@@ -1,17 +1,17 @@
 import { connect } from "../config/database.js";
 
-// ==========================================
-// Buscar todos os certificados
-// ==========================================
-
 async function selectCertificates() {
   const client = await connect();
 
   try {
     const result = await client.query(`
-      SELECT *
-      FROM certificates
-      ORDER BY id_certificate DESC
+      SELECT
+        c.*,
+        cat.name_category
+      FROM certificates c
+      INNER JOIN categories cat
+        ON c.id_category = cat.id_category
+      ORDER BY c.id_certificate DESC
     `);
 
     return result.rows;
@@ -20,20 +20,20 @@ async function selectCertificates() {
   }
 }
 
-// ==========================================
-// Buscar certificados de um usuário
-// ==========================================
-
 async function selectCertificatesByUser(id_user) {
   const client = await connect();
 
   try {
     const result = await client.query(
       `
-      SELECT *
-      FROM certificates
-      WHERE id_user = $1
-      ORDER BY id_certificate DESC
+      SELECT
+        c.*,
+        cat.name_category
+      FROM certificates c
+      INNER JOIN categories cat
+        ON c.id_category = cat.id_category
+      WHERE c.id_user = $1
+      ORDER BY c.id_certificate DESC
       `,
       [id_user],
     );
@@ -44,19 +44,19 @@ async function selectCertificatesByUser(id_user) {
   }
 }
 
-// ==========================================
-// Buscar certificado por ID
-// ==========================================
-
 async function selectCertificateById(id) {
   const client = await connect();
 
   try {
     const result = await client.query(
       `
-      SELECT *
-      FROM certificates
-      WHERE id_certificate = $1
+      SELECT
+        c.*,
+        cat.name_category
+      FROM certificates c
+      INNER JOIN categories cat
+        ON c.id_category = cat.id_category
+      WHERE c.id_certificate = $1
       `,
       [id],
     );
@@ -67,20 +67,20 @@ async function selectCertificateById(id) {
   }
 }
 
-// ==========================================
-// Buscar certificado por ID + usuário
-// ==========================================
-
 async function selectCertificateByIdAndUser(id_certificate, id_user) {
   const client = await connect();
 
   try {
     const result = await client.query(
       `
-      SELECT *
-      FROM certificates
-      WHERE id_certificate = $1
-      AND id_user = $2
+      SELECT
+        c.*,
+        cat.name_category
+      FROM certificates c
+      INNER JOIN categories cat
+        ON c.id_category = cat.id_category
+      WHERE c.id_certificate = $1
+        AND c.id_user = $2
       `,
       [id_certificate, id_user],
     );
@@ -91,10 +91,6 @@ async function selectCertificateByIdAndUser(id_certificate, id_user) {
   }
 }
 
-// ==========================================
-// Inserir certificado
-// ==========================================
-
 async function insertCertificate(certificate) {
   const client = await connect();
 
@@ -103,7 +99,7 @@ async function insertCertificate(certificate) {
       id_user,
       name_certificate,
       institution_certificate,
-      category_certificate,
+      id_category,
       date_conclusion,
       date_validity,
       hours_certificate,
@@ -119,7 +115,7 @@ async function insertCertificate(certificate) {
         id_user,
         name_certificate,
         institution_certificate,
-        category_certificate,
+        id_category,
         date_conclusion,
         date_validity,
         hours_certificate,
@@ -138,7 +134,7 @@ async function insertCertificate(certificate) {
         id_user,
         name_certificate,
         institution_certificate,
-        category_certificate,
+        id_category,
         date_conclusion,
         date_validity || null,
         hours_certificate,
@@ -155,10 +151,6 @@ async function insertCertificate(certificate) {
   }
 }
 
-// ==========================================
-// Atualizar certificado
-// ==========================================
-
 async function updateCertificate(id, certificate) {
   const client = await connect();
 
@@ -166,7 +158,7 @@ async function updateCertificate(id, certificate) {
     const {
       name_certificate,
       institution_certificate,
-      category_certificate,
+      id_category,
       date_conclusion,
       date_validity,
       hours_certificate,
@@ -182,7 +174,7 @@ async function updateCertificate(id, certificate) {
       SET
         name_certificate = $1,
         institution_certificate = $2,
-        category_certificate = $3,
+        id_category = $3,
         date_conclusion = $4,
         date_validity = $5,
         hours_certificate = $6,
@@ -196,7 +188,7 @@ async function updateCertificate(id, certificate) {
       [
         name_certificate,
         institution_certificate,
-        category_certificate,
+        id_category,
         date_conclusion,
         date_validity || null,
         hours_certificate,
@@ -214,10 +206,6 @@ async function updateCertificate(id, certificate) {
   }
 }
 
-// ==========================================
-// Atualizar certificado por ID + usuário
-// ==========================================
-
 async function updateCertificateByUser(id_certificate, id_user, certificate) {
   const client = await connect();
 
@@ -225,7 +213,7 @@ async function updateCertificateByUser(id_certificate, id_user, certificate) {
     const {
       name_certificate,
       institution_certificate,
-      category_certificate,
+      id_category,
       date_conclusion,
       date_validity,
       hours_certificate,
@@ -241,7 +229,7 @@ async function updateCertificateByUser(id_certificate, id_user, certificate) {
       SET
         name_certificate = $1,
         institution_certificate = $2,
-        category_certificate = $3,
+        id_category = $3,
         date_conclusion = $4,
         date_validity = $5,
         hours_certificate = $6,
@@ -250,13 +238,13 @@ async function updateCertificateByUser(id_certificate, id_user, certificate) {
         description = $9,
         file_path = $10
       WHERE id_certificate = $11
-      AND id_user = $12
+        AND id_user = $12
       RETURNING *
       `,
       [
         name_certificate,
         institution_certificate,
-        category_certificate,
+        id_category,
         date_conclusion,
         date_validity || null,
         hours_certificate,
@@ -274,10 +262,6 @@ async function updateCertificateByUser(id_certificate, id_user, certificate) {
     client.release();
   }
 }
-
-// ==========================================
-// Excluir certificado
-// ==========================================
 
 async function deleteCertificate(id) {
   const client = await connect();
@@ -298,10 +282,6 @@ async function deleteCertificate(id) {
   }
 }
 
-// ==========================================
-// Excluir certificado por ID + usuário
-// ==========================================
-
 async function deleteCertificateByUser(id_certificate, id_user) {
   const client = await connect();
 
@@ -310,7 +290,7 @@ async function deleteCertificateByUser(id_certificate, id_user) {
       `
       DELETE FROM certificates
       WHERE id_certificate = $1
-      AND id_user = $2
+        AND id_user = $2
       RETURNING *
       `,
       [id_certificate, id_user],
@@ -321,10 +301,6 @@ async function deleteCertificateByUser(id_certificate, id_user) {
     client.release();
   }
 }
-
-// ==========================================
-// EXPORTS
-// ==========================================
 
 export {
   selectCertificates,

@@ -55,7 +55,11 @@ function Dashboard() {
 
         const response = await api.get("/certificates");
 
-        setCertificates(response.data);
+        const certificatesData = Array.isArray(response.data)
+          ? response.data
+          : response.data.certificates || [];
+
+        setCertificates(certificatesData);
       } catch (error) {
         console.error(
           "Erro ao buscar certificados:",
@@ -109,29 +113,10 @@ function Dashboard() {
       certificates.map((certificate) => certificate.institution_certificate),
     );
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const nextThirtyDays = new Date();
-    nextThirtyDays.setHours(0, 0, 0, 0);
-
-    nextThirtyDays.setDate(nextThirtyDays.getDate() + 30);
-
-    const expiringCertificates = certificates.filter((certificate) => {
-      if (!certificate.date_validity) {
-        return false;
-      }
-
-      const validityDate = new Date(`${certificate.date_validity}T00:00:00`);
-
-      return validityDate >= today && validityDate <= nextThirtyDays;
-    });
-
     return {
       totalCertificates,
       totalHours,
       totalInstitutions: institutions.size,
-      expiringCertificates: expiringCertificates.length,
     };
   }, [certificates]);
 
@@ -230,6 +215,10 @@ function Dashboard() {
     };
   }, [previewUrls]);
 
+  // =========================================
+  // RENDERIZAÇÃO
+  // =========================================
+
   return (
     <div className={styles.container}>
       {/* ALERT */}
@@ -263,17 +252,6 @@ function Dashboard() {
               <p>Total de certificados</p>
 
               <h2>{loading ? "..." : statistics.totalCertificates}</h2>
-            </div>
-          </div>
-
-          {/* PRÓXIMOS DO VENCIMENTO */}
-          <div className={styles.statCard}>
-            <span className={styles.icon}>⏳</span>
-
-            <div>
-              <p>Próximos do vencimento</p>
-
-              <h2>{loading ? "..." : statistics.expiringCertificates}</h2>
             </div>
           </div>
 
@@ -361,7 +339,11 @@ function Dashboard() {
                       <p>{certificate.institution_certificate}</p>
 
                       <div className={styles.certificateDetails}>
-                        <span>{certificate.category_certificate}</span>
+                        <span>
+                          {certificate.name_category ||
+                            certificate.category_certificate ||
+                            "Sem categoria"}
+                        </span>
 
                         <span>{certificate.hours_certificate}h</span>
                       </div>

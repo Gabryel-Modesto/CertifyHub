@@ -3,15 +3,18 @@ import styles from "./RegisterCertificate.module.css";
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 import Alert from "../../components/Alert/Alert.jsx";
 import Loading from "../../components/Loading/Loading.jsx";
+import CategoryManager from "../../components/CategoryManager/CategoryManager.jsx";
 
-import { useState } from "react";
-
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import api from "../../services/api.js";
 
 const RegisterCertificate = () => {
   const navigate = useNavigate();
+
+  // =========================================
+  // ESTADOS
+  // =========================================
 
   const [formData, setFormData] = useState({
     name_certificate: "",
@@ -19,17 +22,79 @@ const RegisterCertificate = () => {
     date_conclusion: "",
     date_validity: "",
     hours_certificate: "",
-    category_certificate: "",
+    id_category: "",
     certification_code: "",
     validation_link: "",
     description: "",
   });
 
+  const [categories, setCategories] = useState([]);
   const [file, setFile] = useState(null);
-
   const [loading, setLoading] = useState(false);
-
   const [alert, setAlert] = useState(null);
+
+  // =========================================
+  // BUSCAR CATEGORIAS
+  // =========================================
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setAlert({
+            message: "Sua sessão não foi encontrada. Faça login novamente.",
+            type: "error",
+          });
+
+          navigate("/");
+          return;
+        }
+
+        const response = await api.get("/categories");
+
+        console.log("Resposta da API - categorias:", response.data);
+
+        const categoriesData =
+          response.data.categories || response.data.data || response.data;
+
+        if (!Array.isArray(categoriesData)) {
+          console.error("Formato inválido de categorias:", response.data);
+
+          setCategories([]);
+          return;
+        }
+
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error(
+          "Erro ao buscar categorias:",
+          error.response?.data || error.message,
+        );
+
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+
+          setAlert({
+            message: "Sua sessão expirou. Faça login novamente.",
+            type: "error",
+          });
+
+          navigate("/");
+          return;
+        }
+
+        setAlert({
+          message: "Não foi possível carregar as categorias.",
+          type: "error",
+        });
+      }
+    };
+
+    fetchCategories();
+  }, [navigate]);
 
   // =========================================
   // ALTERAR CAMPOS
@@ -56,7 +121,6 @@ const RegisterCertificate = () => {
       return;
     }
 
-    // Tipos permitidos
     const allowedTypes = ["application/pdf", "image/png", "image/jpeg"];
 
     if (!allowedTypes.includes(selectedFile.type)) {
@@ -71,7 +135,6 @@ const RegisterCertificate = () => {
       return;
     }
 
-    // Limite de 5 MB
     const maxSize = 5 * 1024 * 1024;
 
     if (selectedFile.size > maxSize) {
@@ -126,7 +189,7 @@ const RegisterCertificate = () => {
 
     const institution = formData.institution_certificate.trim();
 
-    const category = formData.category_certificate.trim();
+    const idCategory = Number(formData.id_category);
 
     const certificationCode = formData.certification_code.trim();
 
@@ -138,7 +201,7 @@ const RegisterCertificate = () => {
     // VALIDAÇÕES
     // =========================================
 
-    // Nome
+    // Nome do certificado
     if (!name) {
       setAlert({
         message: "Informe o nome do certificado.",
@@ -177,7 +240,11 @@ const RegisterCertificate = () => {
     }
 
     // Categoria
-    if (!category) {
+    if (
+      !formData.id_category ||
+      !Number.isInteger(idCategory) ||
+      idCategory <= 0
+    ) {
       setAlert({
         message: "Selecione uma categoria.",
         type: "warning",
@@ -197,6 +264,7 @@ const RegisterCertificate = () => {
     }
 
     const today = new Date();
+
     today.setHours(0, 0, 0, 0);
 
     const conclusionDate = new Date(`${formData.date_conclusion}T00:00:00`);
@@ -246,7 +314,7 @@ const RegisterCertificate = () => {
       return;
     }
 
-    // Código
+    // Código de certificação
     if (certificationCode.length > 250) {
       setAlert({
         message:
@@ -257,7 +325,7 @@ const RegisterCertificate = () => {
       return;
     }
 
-    // Link
+    // Link de validação
     if (validationLink) {
       try {
         new URL(validationLink);
@@ -284,7 +352,7 @@ const RegisterCertificate = () => {
 
       data.append("institution_certificate", institution);
 
-      data.append("category_certificate", category);
+      data.append("id_category", String(idCategory));
 
       data.append("date_conclusion", formData.date_conclusion);
 
@@ -292,7 +360,7 @@ const RegisterCertificate = () => {
         data.append("date_validity", formData.date_validity);
       }
 
-      data.append("hours_certificate", hours);
+      data.append("hours_certificate", String(hours));
 
       if (certificationCode) {
         data.append("certification_code", certificationCode);
@@ -330,7 +398,7 @@ const RegisterCertificate = () => {
         date_conclusion: "",
         date_validity: "",
         hours_certificate: "",
-        category_certificate: "",
+        id_category: "",
         certification_code: "",
         validation_link: "",
         description: "",
@@ -386,6 +454,10 @@ const RegisterCertificate = () => {
     }
   };
 
+  // =========================================
+  // INTERFACE
+  // =========================================
+
   return (
     <div className={styles.container}>
       {/* LOADING */}
@@ -403,7 +475,7 @@ const RegisterCertificate = () => {
       <Sidebar />
 
       <main className={styles.content}>
-        {/* HEADER */}
+        {/* CABEÇALHO */}
         <div className={styles.header}>
           <h1>Cadastrar certificado</h1>
 
@@ -413,11 +485,12 @@ const RegisterCertificate = () => {
         {/* CARD */}
         <div className={styles.card}>
           <form className={styles.form} onSubmit={handleSubmit}>
-            {/* NOME */}
+            {/* NOME DO CERTIFICADO */}
             <div className={styles.inputGroup}>
-              <label>Nome do certificado</label>
+              <label htmlFor="name_certificate">Nome do certificado</label>
 
               <input
+                id="name_certificate"
                 type="text"
                 name="name_certificate"
                 placeholder="Ex: Java Completo"
@@ -431,9 +504,10 @@ const RegisterCertificate = () => {
 
             {/* INSTITUIÇÃO */}
             <div className={styles.inputGroup}>
-              <label>Instituição</label>
+              <label htmlFor="institution_certificate">Instituição</label>
 
               <input
+                id="institution_certificate"
                 type="text"
                 name="institution_certificate"
                 placeholder="Ex: Rocketseat"
@@ -448,9 +522,10 @@ const RegisterCertificate = () => {
             {/* DATAS */}
             <div className={styles.row}>
               <div className={styles.inputGroup}>
-                <label>Data de emissão</label>
+                <label htmlFor="date_conclusion">Data de emissão</label>
 
                 <input
+                  id="date_conclusion"
                   type="date"
                   name="date_conclusion"
                   value={formData.date_conclusion}
@@ -461,9 +536,10 @@ const RegisterCertificate = () => {
               </div>
 
               <div className={styles.inputGroup}>
-                <label>Data de validade</label>
+                <label htmlFor="date_validity">Data de validade</label>
 
                 <input
+                  id="date_validity"
                   type="date"
                   name="date_validity"
                   value={formData.date_validity}
@@ -475,10 +551,12 @@ const RegisterCertificate = () => {
 
             {/* CARGA HORÁRIA + CATEGORIA */}
             <div className={styles.row}>
+              {/* CARGA HORÁRIA */}
               <div className={styles.inputGroup}>
-                <label>Carga horária</label>
+                <label htmlFor="hours_certificate">Carga horária</label>
 
                 <input
+                  id="hours_certificate"
                   type="number"
                   name="hours_certificate"
                   placeholder="Ex: 40"
@@ -491,34 +569,50 @@ const RegisterCertificate = () => {
                 />
               </div>
 
+              {/* CATEGORIA */}
               <div className={styles.inputGroup}>
-                <label>Categoria</label>
+                <CategoryManager
+                  onCategoryCreated={(category) => {
+                    setCategories((previousCategories) => [
+                      ...previousCategories,
+                      category,
+                    ]);
+
+                    setFormData((previousData) => ({
+                      ...previousData,
+                      id_category: String(category.id_category),
+                    }));
+                  }}
+                />
 
                 <select
-                  name="category_certificate"
-                  value={formData.category_certificate}
+                  id="id_category"
+                  name="id_category"
+                  value={formData.id_category}
                   onChange={handleChange}
                   required
                   disabled={loading}
                 >
                   <option value="">Selecione uma categoria</option>
 
-                  <option value="Tecnologia">Tecnologia</option>
-
-                  <option value="Idiomas">Idiomas</option>
-
-                  <option value="Gestão">Gestão</option>
-
-                  <option value="Outros">Outros</option>
+                  {categories.map((category) => (
+                    <option
+                      key={category.id_category}
+                      value={category.id_category}
+                    >
+                      {category.name_category}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
             {/* CÓDIGO DE CERTIFICAÇÃO */}
             <div className={styles.inputGroup}>
-              <label>Código de certificação</label>
+              <label htmlFor="certification_code">Código de certificação</label>
 
               <input
+                id="certification_code"
                 type="text"
                 name="certification_code"
                 placeholder="Ex: CERT-2026-001"
@@ -531,9 +625,10 @@ const RegisterCertificate = () => {
 
             {/* LINK DE VALIDAÇÃO */}
             <div className={styles.inputGroup}>
-              <label>Link de validação</label>
+              <label htmlFor="validation_link">Link de validação</label>
 
               <input
+                id="validation_link"
                 type="url"
                 name="validation_link"
                 placeholder="https://exemplo.com/validar"
@@ -545,9 +640,10 @@ const RegisterCertificate = () => {
 
             {/* DESCRIÇÃO */}
             <div className={styles.inputGroup}>
-              <label>Descrição</label>
+              <label htmlFor="description">Descrição</label>
 
               <textarea
+                id="description"
                 name="description"
                 placeholder="Descreva o certificado..."
                 value={formData.description}
@@ -559,10 +655,12 @@ const RegisterCertificate = () => {
 
             {/* ARQUIVO */}
             <div className={styles.inputGroup}>
-              <label>Arquivo do certificado</label>
+              <label htmlFor="file">Arquivo do certificado</label>
 
               <input
+                id="file"
                 type="file"
+                name="file"
                 accept=".pdf,.png,.jpg,.jpeg"
                 onChange={handleFileChange}
                 disabled={loading}
@@ -570,10 +668,18 @@ const RegisterCertificate = () => {
             </div>
 
             {/* ARQUIVO SELECIONADO */}
-            {file && <p>Arquivo selecionado: {file.name}</p>}
+            {file && (
+              <p className={styles.fileInfo}>
+                Arquivo selecionado: {file.name}
+              </p>
+            )}
 
-            {/* BOTÃO */}
-            <button type="submit" disabled={loading}>
+            {/* BOTÃO PRINCIPAL */}
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={loading}
+            >
               {loading ? "Cadastrando..." : "Cadastrar certificado"}
             </button>
           </form>

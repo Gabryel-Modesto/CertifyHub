@@ -22,19 +22,28 @@ function Certificates() {
   const navigate = useNavigate();
 
   const [certificates, setCertificates] = useState([]);
+
+  const [categories, setCategories] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   const [alert, setAlert] = useState(null);
 
   const [search, setSearch] = useState("");
+
   const [category, setCategory] = useState("Todas");
+
   const [sort, setSort] = useState("recentes");
 
-  // Buscar certificados do usuário logado
+  // =====================================================
+  // BUSCAR CERTIFICADOS
+  // =====================================================
+
   useEffect(() => {
     const fetchCertificates = async () => {
       try {
         setLoading(true);
+
         setAlert(null);
 
         const token = localStorage.getItem("token");
@@ -68,6 +77,7 @@ function Certificates() {
         // Token inválido ou expirado
         if (error.response?.status === 401) {
           localStorage.removeItem("token");
+
           localStorage.removeItem("user");
 
           setAlert({
@@ -82,7 +92,6 @@ function Certificates() {
           return;
         }
 
-        // Outros erros
         setAlert({
           message:
             error.response?.data?.message || "Erro ao carregar certificados.",
@@ -96,17 +105,75 @@ function Certificates() {
     fetchCertificates();
   }, [navigate]);
 
-  // Abrir detalhes do certificado
+  // =====================================================
+  // BUSCAR CATEGORIAS
+  // =====================================================
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await api.get("/categories");
+
+        const categoriesData = Array.isArray(response.data)
+          ? response.data
+          : response.data.categories || [];
+
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error(
+          "Erro ao buscar categorias:",
+          error.response?.data || error.message,
+        );
+
+        // Sessão expirada
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+
+          localStorage.removeItem("user");
+
+          setAlert({
+            message: "Sua sessão expirou. Faça login novamente.",
+            type: "error",
+          });
+
+          setTimeout(() => {
+            navigate("/");
+          }, 1500);
+
+          return;
+        }
+
+        setAlert({
+          message:
+            error.response?.data?.message || "Erro ao carregar categorias.",
+          type: "error",
+        });
+      }
+    };
+
+    fetchCategories();
+  }, [navigate]);
+
+  // =====================================================
+  // ABRIR DETALHES DO CERTIFICADO
+  // =====================================================
+
   const handleCertificate = (id) => {
     navigate(`/certificates/${id}`);
   };
 
-  // Abrir tela de cadastro
+  // =====================================================
+  // ABRIR TELA DE CADASTRO
+  // =====================================================
+
   const handleRegister = () => {
     navigate("/registerCertificate");
   };
 
-  // Filtrar e ordenar certificados
+  // =====================================================
+  // FILTRAR E ORDENAR CERTIFICADOS
+  // =====================================================
+
   const filteredCertificates = certificates
     .filter((certificate) => {
       const searchText = search.toLowerCase();
@@ -119,9 +186,12 @@ function Certificates() {
         certificate.institution_certificate || ""
       ).toLowerCase();
 
+      const categoryName = (certificate.name_category || "").toLowerCase();
+
       return (
         certificateName.includes(searchText) ||
-        institutionName.includes(searchText)
+        institutionName.includes(searchText) ||
+        categoryName.includes(searchText)
       );
     })
     .filter((certificate) => {
@@ -129,7 +199,7 @@ function Certificates() {
         return true;
       }
 
-      return certificate.category_certificate === category;
+      return certificate.name_category === category;
     })
     .sort((a, b) => {
       if (sort === "recentes") {
@@ -155,9 +225,13 @@ function Certificates() {
       return 0;
     });
 
+  // =====================================================
+  // RENDERIZAÇÃO
+  // =====================================================
+
   return (
     <div className={styles.container}>
-      {/* ALERT */}
+      {/* ALERTA */}
       {alert && (
         <Alert
           message={alert.message}
@@ -166,6 +240,7 @@ function Certificates() {
         />
       )}
 
+      {/* SIDEBAR */}
       <Sidebar />
 
       <main className={styles.content}>
@@ -180,6 +255,7 @@ function Certificates() {
           setCategory={setCategory}
           sort={sort}
           setSort={setSort}
+          categories={categories}
         />
 
         {/* CARREGAMENTO */}

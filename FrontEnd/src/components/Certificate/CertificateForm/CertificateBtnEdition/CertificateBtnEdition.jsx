@@ -1,14 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import styles from "./CertificateBtnEdition.module.css";
 
-function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
+import api from "../../../../services/api.js";
+
+function CertificateEditForm({
+  certificate,
+  onSave,
+  onCancel,
+  saving,
+  onError,
+}) {
   const [formData, setFormData] = useState({
     name_certificate: certificate.name_certificate || "",
 
     institution_certificate: certificate.institution_certificate || "",
 
-    category_certificate: certificate.category_certificate || "",
+    id_category: certificate.id_category ? String(certificate.id_category) : "",
 
     date_conclusion: certificate.date_conclusion
       ? certificate.date_conclusion.substring(0, 10)
@@ -27,7 +35,44 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
     description: certificate.description || "",
   });
 
+  const [categories, setCategories] = useState([]);
+
   const [file, setFile] = useState(null);
+
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  // =========================================
+  // BUSCAR CATEGORIAS
+  // =========================================
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true);
+
+        const response = await api.get("/categories");
+
+        const categoriesData = Array.isArray(response.data)
+          ? response.data
+          : response.data.categories || [];
+
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error(
+          "Erro ao carregar categorias:",
+          error.response?.data || error.message,
+        );
+
+        onError?.(
+          error.response?.data?.message || "Erro ao carregar categorias.",
+        );
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, [onError]);
 
   // =========================================
   // ALTERAR CAMPOS
@@ -36,8 +81,8 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((previousData) => ({
+      ...previousData,
       [name]: value,
     }));
   };
@@ -58,9 +103,10 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
     const allowedTypes = ["application/pdf", "image/png", "image/jpeg"];
 
     if (!allowedTypes.includes(selectedFile.type)) {
-      alert("Arquivo inválido. Selecione um PDF, PNG, JPG ou JPEG.");
+      onError?.("Arquivo inválido. Selecione um PDF, PNG, JPG ou JPEG.");
 
       event.target.value = "";
+
       setFile(null);
 
       return;
@@ -70,9 +116,10 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
     const maxSize = 5 * 1024 * 1024;
 
     if (selectedFile.size > maxSize) {
-      alert("O arquivo deve possuir no máximo 5 MB.");
+      onError?.("O arquivo deve possuir no máximo 5 MB.");
 
       event.target.value = "";
+
       setFile(null);
 
       return;
@@ -96,13 +143,13 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
 
     const institution = formData.institution_certificate.trim();
 
-    const category = formData.category_certificate.trim();
-
     const certificationCode = formData.certification_code.trim();
 
     const validationLink = formData.validation_link.trim();
 
     const description = formData.description.trim();
+
+    const idCategory = Number(formData.id_category);
 
     // =========================================
     // VALIDAÇÕES
@@ -110,45 +157,55 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
 
     // Nome
     if (!name) {
-      alert("Informe o nome do certificado.");
+      onError?.("Informe o nome do certificado.");
       return;
     }
 
     if (name.length > 250) {
-      alert("O nome do certificado deve possuir no máximo 250 caracteres.");
+      onError?.("O nome do certificado deve possuir no máximo 250 caracteres.");
       return;
     }
 
     // Instituição
     if (!institution) {
-      alert("Informe a instituição.");
+      onError?.("Informe a instituição.");
       return;
     }
 
     if (institution.length > 250) {
-      alert("A instituição deve possuir no máximo 250 caracteres.");
+      onError?.("A instituição deve possuir no máximo 250 caracteres.");
       return;
     }
 
     // Categoria
-    if (!category) {
-      alert("Selecione uma categoria.");
+    if (
+      !formData.id_category ||
+      !Number.isInteger(idCategory) ||
+      idCategory <= 0
+    ) {
+      onError?.("Selecione uma categoria.");
       return;
     }
 
     // Data de emissão
     if (!formData.date_conclusion) {
-      alert("Informe a data de emissão.");
+      onError?.("Informe a data de emissão.");
       return;
     }
 
     const today = new Date();
+
     today.setHours(0, 0, 0, 0);
 
     const conclusionDate = new Date(`${formData.date_conclusion}T00:00:00`);
 
+    if (Number.isNaN(conclusionDate.getTime())) {
+      onError?.("A data de emissão é inválida.");
+      return;
+    }
+
     if (conclusionDate > today) {
-      alert("A data de emissão não pode ser futura.");
+      onError?.("A data de emissão não pode ser futura.");
       return;
     }
 
@@ -156,58 +213,88 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
     if (formData.date_validity) {
       const validityDate = new Date(`${formData.date_validity}T00:00:00`);
 
+      if (Number.isNaN(validityDate.getTime())) {
+        onError?.("A data de validade é inválida.");
+        return;
+      }
+
       if (validityDate < conclusionDate) {
-        alert("A data de validade não pode ser anterior à data de emissão.");
+        onError?.(
+          "A data de validade não pode ser anterior à data de emissão.",
+        );
         return;
       }
     }
 
     // Carga horária
     if (!formData.hours_certificate) {
-      alert("Informe a carga horária.");
+      onError?.("Informe a carga horária.");
       return;
     }
 
     const hours = Number(formData.hours_certificate);
 
     if (!Number.isInteger(hours) || hours <= 0) {
-      alert("A carga horária deve ser um número inteiro maior que zero.");
+      onError?.("A carga horária deve ser um número inteiro maior que zero.");
       return;
     }
 
     // Código
     if (certificationCode.length > 250) {
-      alert("O código de certificação deve possuir no máximo 250 caracteres.");
+      onError?.(
+        "O código de certificação deve possuir no máximo 250 caracteres.",
+      );
       return;
     }
 
     // Link
     if (validationLink) {
       try {
-        new URL(validationLink);
+        const url = new URL(validationLink);
+
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          onError?.("Informe um link de validação válido.");
+          return;
+        }
       } catch {
-        alert("Informe um link de validação válido.");
+        onError?.("Informe um link de validação válido.");
+        return;
+      }
+
+      if (validationLink.length > 500) {
+        onError?.("O link de validação deve possuir no máximo 500 caracteres.");
         return;
       }
     }
 
     // =========================================
-    // ENVIAR PARA O PAI
+    // DADOS VALIDADOS
     // =========================================
 
     const validatedData = {
       ...formData,
+
       name_certificate: name,
+
       institution_certificate: institution,
-      category_certificate: category,
+
+      id_category: String(idCategory),
+
       certification_code: certificationCode,
+
       validation_link: validationLink,
+
       description,
+
       hours_certificate: hours,
     };
 
     onSave(validatedData, file);
   };
+
+  // =========================================
+  // RENDERIZAÇÃO
+  // =========================================
 
   return (
     <form className={styles.editForm} onSubmit={handleSubmit}>
@@ -302,21 +389,19 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           <label>Categoria</label>
 
           <select
-            name="category_certificate"
-            value={formData.category_certificate}
+            name="id_category"
+            value={formData.id_category}
             onChange={handleChange}
             required
-            disabled={saving}
+            disabled={saving || loadingCategories}
           >
             <option value="">Selecione uma categoria</option>
 
-            <option value="Tecnologia">Tecnologia</option>
-
-            <option value="Idiomas">Idiomas</option>
-
-            <option value="Gestão">Gestão</option>
-
-            <option value="Outros">Outros</option>
+            {categories.map((category) => (
+              <option key={category.id_category} value={category.id_category}>
+                {category.name_category}
+              </option>
+            ))}
           </select>
         </div>
       </div>
@@ -352,6 +437,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.validation_link}
           onChange={handleChange}
           placeholder="https://..."
+          maxLength={500}
           disabled={saving}
         />
       </div>
@@ -403,7 +489,11 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
       ========================================= */}
 
       <div className={styles.actions}>
-        <button type="submit" className={styles.saveButton} disabled={saving}>
+        <button
+          type="submit"
+          className={styles.saveButton}
+          disabled={saving || loadingCategories}
+        >
           {saving ? "Salvando..." : "💾 Salvar alterações"}
         </button>
 

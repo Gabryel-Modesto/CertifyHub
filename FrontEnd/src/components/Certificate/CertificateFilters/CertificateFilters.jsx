@@ -7,6 +7,7 @@ function CertificateFilters({
   setCategory,
   sort,
   setSort,
+  categories = [],
 }) {
   return (
     <section className={styles.filters}>
@@ -15,61 +16,32 @@ function CertificateFilters({
         type="text"
         placeholder="🔍 Buscar certificado..."
         value={search}
-        onChange={(event) =>
-          setSearch(event.target.value)
-        }
+        onChange={(event) => setSearch(event.target.value)}
       />
 
       {/* CATEGORIA */}
       <select
         value={category}
-        onChange={(event) =>
-          setCategory(event.target.value)
-        }
+        onChange={(event) => setCategory(event.target.value)}
       >
-        <option value="Todas">
-          Todas as categorias
-        </option>
+        <option value="Todas">Todas as categorias</option>
 
-        <option value="Tecnologia">
-          Tecnologia
-        </option>
-
-        <option value="Banco de Dados">
-          Banco de Dados
-        </option>
-
-        <option value="Gestão">
-          Gestão
-        </option>
-
-        <option value="Idiomas">
-          Idiomas
-        </option>
+        {categories.map((item) => (
+          <option key={item.id_category} value={item.name_category}>
+            {item.name_category}
+          </option>
+        ))}
       </select>
 
       {/* ORDENAÇÃO */}
-      <select
-        value={sort}
-        onChange={(event) =>
-          setSort(event.target.value)
-        }
-      >
-        <option value="recentes">
-          Mais recentes
-        </option>
+      <select value={sort} onChange={(event) => setSort(event.target.value)}>
+        <option value="recentes">Mais recentes</option>
 
-        <option value="antigos">
-          Mais antigos
-        </option>
+        <option value="antigos">Mais antigos</option>
 
-        <option value="az">
-          Nome A-Z
-        </option>
+        <option value="az">Nome A-Z</option>
 
-        <option value="za">
-          Nome Z-A
-        </option>
+        <option value="za">Nome Z-A</option>
       </select>
     </section>
   );

@@ -8,11 +8,14 @@ import { useEffect, useState } from "react";
 
 function CertificateCard({ certificate, onClick }) {
   const [previewUrl, setPreviewUrl] = useState(null);
+
   const [loadingPreview, setLoadingPreview] = useState(false);
+
   const [previewError, setPreviewError] = useState(false);
 
   useEffect(() => {
     let objectUrl = null;
+
     let cancelled = false;
 
     const loadPreview = async () => {
@@ -22,6 +25,7 @@ function CertificateCard({ certificate, onClick }) {
 
       try {
         setLoadingPreview(true);
+
         setPreviewError(false);
 
         const response = await api.get(
@@ -95,7 +99,7 @@ function CertificateCard({ certificate, onClick }) {
 
         {/* DETALHES */}
         <div className={styles.certificateDetails}>
-          <span>{certificate.category_certificate}</span>
+          <span>{certificate.name_category || "Sem categoria"}</span>
 
           <span>{certificate.hours_certificate}h</span>
         </div>

@@ -1,37 +1,22 @@
 import { useState } from "react";
-
 import api from "../../../services/api.js";
-
 import Alert from "../../Alert/Alert.jsx";
-
 import Loading from "../../Loading/Loading.jsx";
-
 import styles from "./BtnEditUser.module.css";
 
 function BtnEditUser({ user, onUserUpdated }) {
   const [isEditing, setIsEditing] = useState(false);
-
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
-
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(null);
-
-  // =========================================
-  // ABRIR EDIÇÃO
-  // =========================================
 
   const handleOpen = () => {
     setName(user.name);
     setEmail(user.email);
     setAlert(null);
-
     setIsEditing(true);
   };
-
-  // =========================================
-  // CANCELAR
-  // =========================================
 
   const handleCancel = () => {
     if (loading) {
@@ -41,29 +26,17 @@ function BtnEditUser({ user, onUserUpdated }) {
     setName(user.name);
     setEmail(user.email);
     setAlert(null);
-
     setIsEditing(false);
   };
 
-  // =========================================
-  // SALVAR
-  // =========================================
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     setAlert(null);
 
-    // =========================================
-    // NORMALIZAÇÃO
-    // =========================================
-
     const normalizedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
-
-    // =========================================
-    // VALIDAÇÕES
-    // =========================================
 
     // Nome obrigatório
     if (!normalizedName) {
@@ -117,9 +90,15 @@ function BtnEditUser({ user, onUserUpdated }) {
       return;
     }
 
-    // =========================================
-    // VERIFICAR SE HOUVE ALTERAÇÃO
-    // =========================================
+    // E-mail máximo
+    if (normalizedEmail.length > 250) {
+      setAlert({
+        message: "O e-mail deve possuir no máximo 250 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
 
     const currentName = user.name.trim();
     const currentEmail = user.email.trim().toLowerCase();
@@ -132,10 +111,6 @@ function BtnEditUser({ user, onUserUpdated }) {
 
       return;
     }
-
-    // =========================================
-    // ATUALIZAR USUÁRIO
-    // =========================================
 
     try {
       setLoading(true);
@@ -167,10 +142,11 @@ function BtnEditUser({ user, onUserUpdated }) {
         error.response?.data || error.message,
       );
 
-      // Sessão expirada
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+
+        setIsEditing(false);
 
         setAlert({
           message: "Sua sessão expirou. Faça login novamente.",
@@ -184,7 +160,6 @@ function BtnEditUser({ user, onUserUpdated }) {
         return;
       }
 
-      // E-mail já utilizado
       if (error.response?.status === 409) {
         setAlert({
           message:
@@ -196,7 +171,6 @@ function BtnEditUser({ user, onUserUpdated }) {
         return;
       }
 
-      // Erro de validação
       if (error.response?.status === 400) {
         setAlert({
           message: error.response?.data?.message || "Dados inválidos.",
@@ -206,7 +180,6 @@ function BtnEditUser({ user, onUserUpdated }) {
         return;
       }
 
-      // Outros erros
       setAlert({
         message: error.response?.data?.message || "Erro ao atualizar usuário.",
         type: "error",
@@ -218,7 +191,7 @@ function BtnEditUser({ user, onUserUpdated }) {
 
   return (
     <>
-      {/* BOTÃO */}
+
       <button
         type="button"
         className={styles.editButton}
@@ -228,23 +201,22 @@ function BtnEditUser({ user, onUserUpdated }) {
         ✏️ Editar perfil
       </button>
 
-      {/* LOADING */}
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
       {loading && <Loading message="Salvando alterações..." />}
 
-      {/* MODAL */}
+
       {isEditing && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
-            {/* ALERT */}
-            {alert && (
-              <Alert
-                message={alert.message}
-                type={alert.type}
-                onClose={() => setAlert(null)}
-              />
-            )}
-
             {/* HEADER */}
+
             <div className={styles.modalHeader}>
               <h2>Editar perfil</h2>
 
@@ -260,6 +232,7 @@ function BtnEditUser({ user, onUserUpdated }) {
 
             <form onSubmit={handleSubmit}>
               {/* NOME */}
+
               <div className={styles.formGroup}>
                 <label>Nome</label>
 
@@ -274,6 +247,7 @@ function BtnEditUser({ user, onUserUpdated }) {
               </div>
 
               {/* E-MAIL */}
+
               <div className={styles.formGroup}>
                 <label>E-mail</label>
 
@@ -281,12 +255,14 @@ function BtnEditUser({ user, onUserUpdated }) {
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
+                  maxLength={250}
                   required
                   disabled={loading}
                 />
               </div>
 
               {/* AÇÕES */}
+
               <div className={styles.actions}>
                 <button
                   type="button"

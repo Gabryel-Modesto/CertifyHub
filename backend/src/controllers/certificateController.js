@@ -6,12 +6,13 @@ import {
   deleteCertificateByUser,
 } from "../model/certificateModel.js";
 
+import { selectCategoryByIdAndUser } from "../model/categoryModel.js";
+
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-
 const __dirname = path.dirname(__filename);
 
 const certificatesUploadPath = path.resolve(
@@ -48,6 +49,30 @@ const isValidDate = (value) => {
 };
 
 // ==========================================
+// VALIDAR ID
+// ==========================================
+
+const isValidId = (id) => {
+  return Number.isInteger(Number(id)) && Number(id) > 0;
+};
+
+// ==========================================
+// REMOVER ARQUIVO UPLOADADO
+// ==========================================
+
+const removeUploadedFile = (file) => {
+  if (!file) {
+    return;
+  }
+
+  const uploadedFilePath = path.join(certificatesUploadPath, file.filename);
+
+  if (fs.existsSync(uploadedFilePath)) {
+    fs.unlinkSync(uploadedFilePath);
+  }
+};
+
+// ==========================================
 // BUSCAR CERTIFICADOS
 // ==========================================
 
@@ -74,10 +99,15 @@ async function getCertificates(req, res) {
 async function getCertificateById(req, res) {
   try {
     const { id } = req.params;
-
     const id_user = req.user.id;
 
-    const certificate = await selectCertificateByIdAndUser(id, id_user);
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        message: "ID do certificado inválido.",
+      });
+    }
+
+    const certificate = await selectCertificateByIdAndUser(Number(id), id_user);
 
     if (!certificate) {
       return res.status(404).json({
@@ -102,7 +132,7 @@ async function getCertificateById(req, res) {
 const validateCertificateData = ({
   name_certificate,
   institution_certificate,
-  category_certificate,
+  id_category,
   date_conclusion,
   date_validity,
   hours_certificate,
@@ -128,8 +158,12 @@ const validateCertificateData = ({
   }
 
   // Categoria
-  if (!category_certificate?.trim()) {
+  if (id_category === undefined || id_category === null || id_category === "") {
     return "Selecione uma categoria.";
+  }
+
+  if (!Number.isInteger(Number(id_category)) || Number(id_category) <= 0) {
+    return "A categoria selecionada é inválida.";
   }
 
   // Data de emissão
@@ -179,12 +213,12 @@ const validateCertificateData = ({
     return "A carga horária deve ser um número inteiro maior que zero.";
   }
 
-  // Código
+  // Código de certificação
   if (certification_code && certification_code.trim().length > 250) {
     return "O código de certificação deve possuir no máximo 250 caracteres.";
   }
 
-  // Link
+  // Link de validação
   if (validation_link) {
     if (!isValidUrl(validation_link.trim())) {
       return "Informe um link de validação válido.";
@@ -199,6 +233,23 @@ const validateCertificateData = ({
 };
 
 // ==========================================
+// VALIDAR CATEGORIA DO USUÁRIO
+// ==========================================
+
+async function validateUserCategory(id_category, id_user) {
+  if (!isValidId(id_category)) {
+    return false;
+  }
+
+  const category = await selectCategoryByIdAndUser(
+    Number(id_category),
+    id_user,
+  );
+
+  return Boolean(category);
+}
+
+// ==========================================
 // INSERIR CERTIFICADO
 // ==========================================
 
@@ -209,18 +260,7 @@ async function createCertificate(req, res) {
     const validationError = validateCertificateData(req.body);
 
     if (validationError) {
-      // Se o Multer já tiver salvo um arquivo,
-      // remove para evitar arquivo órfão.
-      if (req.file) {
-        const uploadedFilePath = path.join(
-          certificatesUploadPath,
-          req.file.filename,
-        );
-
-        if (fs.existsSync(uploadedFilePath)) {
-          fs.unlinkSync(uploadedFilePath);
-        }
-      }
+      removeUploadedFile(req.file);
 
       return res.status(400).json({
         message: validationError,
@@ -230,7 +270,7 @@ async function createCertificate(req, res) {
     const {
       name_certificate,
       institution_certificate,
-      category_certificate,
+      id_category,
       date_conclusion,
       date_validity,
       hours_certificate,
@@ -239,6 +279,16 @@ async function createCertificate(req, res) {
       description,
     } = req.body;
 
+    const categoryIsValid = await validateUserCategory(id_category, id_user);
+
+    if (!categoryIsValid) {
+      removeUploadedFile(req.file);
+
+      return res.status(400).json({
+        message: "A categoria selecionada é inválida.",
+      });
+    }
+
     const certificateData = {
       id_user,
 
@@ -246,7 +296,7 @@ async function createCertificate(req, res) {
 
       institution_certificate: institution_certificate.trim(),
 
-      category_certificate: category_certificate.trim(),
+      id_category: Number(id_category),
 
       date_conclusion,
 
@@ -272,16 +322,13 @@ async function createCertificate(req, res) {
   } catch (error) {
     console.error("Erro ao cadastrar certificado:", error);
 
-    // Caso ocorra erro depois do upload
-    if (req.file) {
-      const uploadedFilePath = path.join(
-        certificatesUploadPath,
-        req.file.filename,
-      );
+    removeUploadedFile(req.file);
 
-      if (fs.existsSync(uploadedFilePath)) {
-        fs.unlinkSync(uploadedFilePath);
-      }
+    // Categoria inexistente
+    if (error.code === "23503") {
+      return res.status(400).json({
+        message: "A categoria selecionada é inválida.",
+      });
     }
 
     return res.status(500).json({
@@ -297,24 +344,20 @@ async function createCertificate(req, res) {
 async function updateCertificateController(req, res) {
   try {
     const { id } = req.params;
-
     const id_user = req.user.id;
+
+    if (!isValidId(id)) {
+      removeUploadedFile(req.file);
+
+      return res.status(400).json({
+        message: "ID do certificado inválido.",
+      });
+    }
 
     const validationError = validateCertificateData(req.body);
 
     if (validationError) {
-      // Se escolheu um novo arquivo,
-      // remove caso a validação falhe.
-      if (req.file) {
-        const uploadedFilePath = path.join(
-          certificatesUploadPath,
-          req.file.filename,
-        );
-
-        if (fs.existsSync(uploadedFilePath)) {
-          fs.unlinkSync(uploadedFilePath);
-        }
-      }
+      removeUploadedFile(req.file);
 
       return res.status(400).json({
         message: validationError,
@@ -322,20 +365,13 @@ async function updateCertificateController(req, res) {
     }
 
     // Buscar certificado atual
-    const currentCertificate = await selectCertificateByIdAndUser(id, id_user);
+    const currentCertificate = await selectCertificateByIdAndUser(
+      Number(id),
+      id_user,
+    );
 
     if (!currentCertificate) {
-      // Remove arquivo novo caso exista
-      if (req.file) {
-        const uploadedFilePath = path.join(
-          certificatesUploadPath,
-          req.file.filename,
-        );
-
-        if (fs.existsSync(uploadedFilePath)) {
-          fs.unlinkSync(uploadedFilePath);
-        }
-      }
+      removeUploadedFile(req.file);
 
       return res.status(404).json({
         message: "Certificado não encontrado.",
@@ -345,7 +381,7 @@ async function updateCertificateController(req, res) {
     const {
       name_certificate,
       institution_certificate,
-      category_certificate,
+      id_category,
       date_conclusion,
       date_validity,
       hours_certificate,
@@ -353,6 +389,16 @@ async function updateCertificateController(req, res) {
       validation_link,
       description,
     } = req.body;
+
+    const categoryIsValid = await validateUserCategory(id_category, id_user);
+
+    if (!categoryIsValid) {
+      removeUploadedFile(req.file);
+
+      return res.status(400).json({
+        message: "A categoria selecionada é inválida.",
+      });
+    }
 
     const newFilePath = req.file
       ? `/uploads/certificates/${req.file.filename}`
@@ -363,7 +409,7 @@ async function updateCertificateController(req, res) {
 
       institution_certificate: institution_certificate.trim(),
 
-      category_certificate: category_certificate.trim(),
+      id_category: Number(id_category),
 
       date_conclusion,
 
@@ -381,31 +427,20 @@ async function updateCertificateController(req, res) {
     };
 
     const certificate = await updateCertificateByUser(
-      id,
+      Number(id),
       id_user,
       certificateData,
     );
 
     if (!certificate) {
-      // Remove arquivo novo
-      if (req.file) {
-        const uploadedFilePath = path.join(
-          certificatesUploadPath,
-          req.file.filename,
-        );
-
-        if (fs.existsSync(uploadedFilePath)) {
-          fs.unlinkSync(uploadedFilePath);
-        }
-      }
+      removeUploadedFile(req.file);
 
       return res.status(404).json({
         message: "Certificado não encontrado.",
       });
     }
 
-    // Se substituiu o arquivo,
-    // remove o arquivo antigo.
+    // Se substituiu o arquivo, remover o antigo
     if (req.file && currentCertificate.file_path) {
       const oldFileName = path.basename(currentCertificate.file_path);
 
@@ -423,16 +458,12 @@ async function updateCertificateController(req, res) {
   } catch (error) {
     console.error("Erro ao atualizar certificado:", error);
 
-    // Remover arquivo novo em caso de erro
-    if (req.file) {
-      const uploadedFilePath = path.join(
-        certificatesUploadPath,
-        req.file.filename,
-      );
+    removeUploadedFile(req.file);
 
-      if (fs.existsSync(uploadedFilePath)) {
-        fs.unlinkSync(uploadedFilePath);
-      }
+    if (error.code === "23503") {
+      return res.status(400).json({
+        message: "A categoria selecionada é inválida.",
+      });
     }
 
     return res.status(500).json({
@@ -448,10 +479,15 @@ async function updateCertificateController(req, res) {
 async function deleteCertificateController(req, res) {
   try {
     const { id } = req.params;
-
     const id_user = req.user.id;
 
-    const certificate = await selectCertificateByIdAndUser(id, id_user);
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        message: "ID do certificado inválido.",
+      });
+    }
+
+    const certificate = await selectCertificateByIdAndUser(Number(id), id_user);
 
     if (!certificate) {
       return res.status(404).json({
@@ -459,7 +495,10 @@ async function deleteCertificateController(req, res) {
       });
     }
 
-    const deletedCertificate = await deleteCertificateByUser(id, id_user);
+    const deletedCertificate = await deleteCertificateByUser(
+      Number(id),
+      id_user,
+    );
 
     if (!deletedCertificate) {
       return res.status(404).json({
@@ -498,10 +537,15 @@ async function deleteCertificateController(req, res) {
 async function downloadCertificate(req, res) {
   try {
     const { id } = req.params;
-
     const id_user = req.user.id;
 
-    const certificate = await selectCertificateByIdAndUser(id, id_user);
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        message: "ID do certificado inválido.",
+      });
+    }
+
+    const certificate = await selectCertificateByIdAndUser(Number(id), id_user);
 
     if (!certificate) {
       return res.status(404).json({
@@ -550,10 +594,15 @@ async function downloadCertificate(req, res) {
 async function previewCertificate(req, res) {
   try {
     const { id } = req.params;
-
     const id_user = req.user.id;
 
-    const certificate = await selectCertificateByIdAndUser(id, id_user);
+    if (!isValidId(id)) {
+      return res.status(400).json({
+        message: "ID do certificado inválido.",
+      });
+    }
+
+    const certificate = await selectCertificateByIdAndUser(Number(id), id_user);
 
     if (!certificate) {
       return res.status(404).json({

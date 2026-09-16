@@ -34,13 +34,28 @@ function CertificateDetails() {
   const [saving, setSaving] = useState(false);
 
   // =========================================
+  // BUSCAR CERTIFICADO
+  // =========================================
+
+  const fetchCertificate = async () => {
+    const response = await api.get(`/certificates/${id}`);
+
+    const certificateData = response.data.certificate || response.data;
+
+    setCertificate(certificateData);
+
+    return certificateData;
+  };
+
+  // =========================================
   // BUSCAR CERTIFICADO + PREVIEW
   // =========================================
 
   useEffect(() => {
-    const fetchCertificate = async () => {
+    const loadCertificate = async () => {
       try {
         setLoading(true);
+
         setAlert(null);
 
         const token = localStorage.getItem("token");
@@ -58,14 +73,8 @@ function CertificateDetails() {
           return;
         }
 
-        // Buscar dados do certificado
-        const response = await api.get(`/certificates/${id}`);
+        const certificateData = await fetchCertificate();
 
-        const certificateData = response.data;
-
-        setCertificate(certificateData);
-
-        // Buscar preview protegido
         if (certificateData.file_path) {
           const fileResponse = await api.get(`/certificates/${id}/preview`, {
             responseType: "blob",
@@ -81,7 +90,6 @@ function CertificateDetails() {
           error.response?.data || error.message,
         );
 
-        // Token inválido ou expirado
         if (error.response?.status === 401) {
           localStorage.removeItem("token");
           localStorage.removeItem("user");
@@ -98,17 +106,6 @@ function CertificateDetails() {
           return;
         }
 
-        // Certificado não encontrado
-        if (error.response?.status === 404) {
-          setAlert({
-            message: "Certificado não encontrado.",
-            type: "error",
-          });
-
-          return;
-        }
-
-        // Outros erros
         setAlert({
           message:
             error.response?.data?.message || "Erro ao carregar certificado.",
@@ -119,7 +116,7 @@ function CertificateDetails() {
       }
     };
 
-    fetchCertificate();
+    loadCertificate();
   }, [id, navigate]);
 
   // =========================================
@@ -158,6 +155,7 @@ function CertificateDetails() {
 
   const handleSave = async (formData, file) => {
     setSaving(true);
+
     setAlert(null);
 
     try {
@@ -167,7 +165,7 @@ function CertificateDetails() {
 
       data.append("institution_certificate", formData.institution_certificate);
 
-      data.append("category_certificate", formData.category_certificate);
+      data.append("id_category", formData.id_category);
 
       data.append("date_conclusion", formData.date_conclusion);
 
@@ -189,35 +187,46 @@ function CertificateDetails() {
         data.append("description", formData.description);
       }
 
-      // Só envia arquivo se escolher um novo
       if (file) {
         data.append("file", file);
       }
 
-      const response = await api.put(`/certificates/${id}`, data);
+      // SALVAR NO BANCO
+      await api.put(`/certificates/${id}`, data);
 
-      setCertificate(response.data.certificate);
+      // =========================================
+      // BUSCAR NOVAMENTE COM name_category
+      // =========================================
+
+      const updatedResponse = await api.get(`/certificates/${id}`);
+
+      const updatedCertificate =
+        updatedResponse.data.certificate || updatedResponse.data;
+
+      setCertificate(updatedCertificate);
 
       setEditing(false);
 
-      // Se houve novo arquivo, atualiza o preview
+      // =========================================
+      // ATUALIZAR PREVIEW
+      // =========================================
+
       if (file) {
         const fileResponse = await api.get(`/certificates/${id}/preview`, {
           responseType: "blob",
         });
 
-        const url = window.URL.createObjectURL(fileResponse.data);
+        const newPreviewUrl = window.URL.createObjectURL(fileResponse.data);
 
         setPreviewUrl((oldUrl) => {
           if (oldUrl) {
             window.URL.revokeObjectURL(oldUrl);
           }
 
-          return url;
+          return newPreviewUrl;
         });
       }
 
-      // Alert de sucesso
       setAlert({
         message: "Certificado atualizado com sucesso!",
         type: "success",
@@ -228,7 +237,6 @@ function CertificateDetails() {
         error.response?.data || error.message,
       );
 
-      // Token inválido ou expirado
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -245,7 +253,6 @@ function CertificateDetails() {
         return;
       }
 
-      // Outros erros
       setAlert({
         message:
           error.response?.data?.message || "Erro ao atualizar certificado.",
@@ -281,7 +288,7 @@ function CertificateDetails() {
   }
 
   // =========================================
-  // CERTIFICADO NÃO ENCONTRADO
+  // NÃO ENCONTRADO
   // =========================================
 
   if (!certificate) {
@@ -309,12 +316,11 @@ function CertificateDetails() {
   }
 
   // =========================================
-  // PÁGINA
+  // RENDERIZAÇÃO
   // =========================================
 
   return (
     <div className={styles.container}>
-      {/* ALERT */}
       {alert && (
         <Alert
           message={alert.message}
@@ -326,19 +332,16 @@ function CertificateDetails() {
       <Sidebar />
 
       <main className={styles.content}>
-        {/* VOLTAR */}
         <button className={styles.backButton} onClick={handleBack}>
           ← Voltar para certificados
         </button>
 
-        {/* HEADER */}
         <div className={styles.header}>
           <h1>{certificate.name_certificate}</h1>
 
           <p>{certificate.institution_certificate}</p>
         </div>
 
-        {/* CARD */}
         <div className={styles.card}>
           {editing ? (
             <CertificateBtnEdition
@@ -346,6 +349,12 @@ function CertificateDetails() {
               onSave={handleSave}
               onCancel={handleCancelEdit}
               saving={saving}
+              onError={(message) => {
+                setAlert({
+                  message,
+                  type: "error",
+                });
+              }}
             />
           ) : (
             <>
@@ -364,7 +373,6 @@ function CertificateDetails() {
                 ) : (
                   <div className={styles.placeholder}>
                     <span>📜</span>
-
                     <p>Preview do certificado</p>
                   </div>
                 )}
@@ -381,7 +389,9 @@ function CertificateDetails() {
                 <div className={styles.infoItem}>
                   <span>Categoria</span>
 
-                  <strong>{certificate.category_certificate}</strong>
+                  <strong>
+                    {certificate.name_category || "Sem categoria"}
+                  </strong>
                 </div>
 
                 <div className={styles.infoItem}>
