@@ -10,7 +10,7 @@ import RegisterCertificate from "./pages/RegisterCertificate/RegisterCertificate
 import Certificates from "./pages/Certificates/Certificates.jsx";
 import CertificateDetails from "./pages/CertificateDetails/CertificateDetails.jsx";
 import Profile from "./pages/Profile/Profile.jsx";
-import ResetPassword from "./ResetPassword/ResetPassword.jsx";
+import ResetPassword from "./pages/ResetPassword/ResetPassword.jsx";
 
 function App() {
   return (

@@ -1,21 +1,18 @@
 import {
   selectCertificatesByUser,
-  selectCertificateById,
+  selectCertificateByIdAndUser,
   insertCertificate,
-  updateCertificate,
-  deleteCertificate,
+  updateCertificateByUser,
+  deleteCertificateByUser,
 } from "../model/certificateModel.js";
 
+// ==========================================
 // Buscar certificados do usuário
+// ==========================================
+
 async function getCertificates(req, res) {
   try {
-    const { id_user } = req.query;
-
-    if (!id_user) {
-      return res.status(400).json({
-        message: "Usuário não informado.",
-      });
-    }
+    const id_user = req.user.id;
 
     const certificates = await selectCertificatesByUser(id_user);
 
@@ -29,12 +26,17 @@ async function getCertificates(req, res) {
   }
 }
 
+// ==========================================
 // Buscar certificado por ID
+// ==========================================
+
 async function getCertificateById(req, res) {
   try {
     const { id } = req.params;
 
-    const certificate = await selectCertificateById(id);
+    const id_user = req.user.id;
+
+    const certificate = await selectCertificateByIdAndUser(id, id_user);
 
     if (!certificate) {
       return res.status(404).json({
@@ -52,19 +54,22 @@ async function getCertificateById(req, res) {
   }
 }
 
+// ==========================================
 // Cadastrar certificado
+// ==========================================
+
 async function createCertificate(req, res) {
   try {
+    const id_user = req.user.id;
+
     const certificateData = {
       ...req.body,
+
+      // O usuário vem do JWT
+      id_user,
+
       file_path: req.file ? `/uploads/certificates/${req.file.filename}` : null,
     };
-
-    if (!certificateData.id_user) {
-      return res.status(400).json({
-        message: "Usuário não informado.",
-      });
-    }
 
     const certificate = await insertCertificate(certificateData);
 
@@ -81,10 +86,15 @@ async function createCertificate(req, res) {
   }
 }
 
+// ==========================================
 // Atualizar certificado
+// ==========================================
+
 async function updateCertificateController(req, res) {
   try {
     const { id } = req.params;
+
+    const id_user = req.user.id;
 
     const certificateData = {
       ...req.body,
@@ -94,7 +104,11 @@ async function updateCertificateController(req, res) {
         : req.body.file_path || null,
     };
 
-    const certificate = await updateCertificate(id, certificateData);
+    const certificate = await updateCertificateByUser(
+      id,
+      id_user,
+      certificateData,
+    );
 
     if (!certificate) {
       return res.status(404).json({
@@ -115,12 +129,17 @@ async function updateCertificateController(req, res) {
   }
 }
 
+// ==========================================
 // Excluir certificado
+// ==========================================
+
 async function deleteCertificateController(req, res) {
   try {
     const { id } = req.params;
 
-    const certificate = await deleteCertificate(id);
+    const id_user = req.user.id;
+
+    const certificate = await deleteCertificateByUser(id, id_user);
 
     if (!certificate) {
       return res.status(404).json({

@@ -3,6 +3,7 @@ import cors from 'cors';
 import userRoutes from "./routes/user.routes.js";
 import certificatesRoutes from './routes/certificate.routes.js'
 import dotenv from "dotenv"
+
 dotenv.config({path: "./backend/.env",});
 
 const app = express();

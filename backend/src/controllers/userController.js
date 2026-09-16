@@ -19,15 +19,18 @@ import {
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import transporter from "../config/mail.js";
+import jwt from "jsonwebtoken";
 
 // Criar usuário
 const createUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const user = await insertUser(name, email, hashPassword);
+    const user = await insertUser(name, normalizedEmail, hashPassword);
 
     res.status(201).json({
       message: "Usuário criado com sucesso!",
@@ -107,10 +110,14 @@ const loginUser = async (req, res) => {
 
     const user = await selectUserByEmail(normalizedEmail);
 
+    // =====================================================
     // E-MAIL NÃO EXISTE
+    // =====================================================
+
     if (!user) {
       const attempt = await getLoginAttemptByEmail(normalizedEmail);
 
+      // Verifica se o e-mail está bloqueado
       if (
         attempt?.blocked_until &&
         new Date(attempt.blocked_until) > new Date()
@@ -120,9 +127,11 @@ const loginUser = async (req, res) => {
         });
       }
 
+      // Incrementa tentativa
       const updatedAttempt =
         await incrementLoginAttemptsByEmail(normalizedEmail);
 
+      // Bloqueia após 5 tentativas
       if (updatedAttempt.attempts >= 5) {
         await blockLoginAttemptsByEmail(normalizedEmail);
 
@@ -136,7 +145,10 @@ const loginUser = async (req, res) => {
       });
     }
 
+    // =====================================================
     // CONTA BLOQUEADA
+    // =====================================================
+
     if (user.blocked_until && new Date(user.blocked_until) > new Date()) {
       return res.status(403).json({
         message:
@@ -144,13 +156,20 @@ const loginUser = async (req, res) => {
       });
     }
 
+    // =====================================================
     // VERIFICA SENHA
+    // =====================================================
+
     const passwordMatch = await bcrypt.compare(password, user.password_user);
 
+    // =====================================================
     // SENHA INCORRETA
+    // =====================================================
+
     if (!passwordMatch) {
       const updatedUser = await incrementLoginAttempts(user.id_user);
 
+      // Bloqueia após 5 tentativas
       if (updatedUser.login_attempts >= 5) {
         await blockUser(user.id_user);
 
@@ -165,13 +184,33 @@ const loginUser = async (req, res) => {
       });
     }
 
+    // =====================================================
     // LOGIN CORRETO
+    // =====================================================
+
     await resetLoginAttempts(user.id_user);
 
     await resetLoginAttemptsByEmail(normalizedEmail);
 
+    // =====================================================
+    // GERA JWT
+    // =====================================================
+
+    const token = jwt.sign(
+      {
+        id: user.id_user,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      },
+    );
+
     return res.status(200).json({
       message: "Login realizado com sucesso!",
+
+      token,
+
       user: {
         id: user.id_user,
         name: user.name_user,
@@ -213,6 +252,7 @@ const forgotPassword = async (req, res) => {
       from: `"CertifyHub" <${process.env.EMAIL_USER}>`,
       to: user.email_user,
       subject: "Recuperação de senha - CertifyHub",
+
       html: `
         <h2>Recuperação de senha</h2>
 
@@ -229,7 +269,7 @@ const forgotPassword = async (req, res) => {
         </p>
 
         <p>
-          Este link expira em 2 minutos.
+          Este link expira em 5 minutos.
         </p>
 
         <p>
@@ -281,6 +321,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Atualizar usuário
 const updateUserController = async (req, res) => {
   try {
     const { id } = req.params;
@@ -292,6 +333,8 @@ const updateUserController = async (req, res) => {
       });
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const existingUser = await selectedUserByid(id);
 
     if (!existingUser) {
@@ -300,7 +343,7 @@ const updateUserController = async (req, res) => {
       });
     }
 
-    const emailUser = await selectUserByEmail(email);
+    const emailUser = await selectUserByEmail(normalizedEmail);
 
     if (emailUser && emailUser.id_user !== Number(id)) {
       return res.status(409).json({
@@ -308,10 +351,11 @@ const updateUserController = async (req, res) => {
       });
     }
 
-    const user = await updateUser(id, name, email);
+    const user = await updateUser(id, name, normalizedEmail);
 
     return res.status(200).json({
       message: "Usuário atualizado com sucesso!",
+
       user: {
         id: user.id_user,
         name: user.name_user,
@@ -327,6 +371,7 @@ const updateUserController = async (req, res) => {
   }
 };
 
+// Alterar senha
 const changePasswordController = async (req, res) => {
   try {
     const { id } = req.params;

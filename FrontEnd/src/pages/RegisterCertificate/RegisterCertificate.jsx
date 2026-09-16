@@ -3,9 +3,10 @@ import styles from "./RegisterCertificate.module.css";
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 
 import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 
-import axios from "axios";
+import api from "../../services/api.js";
 
 const RegisterCertificate = () => {
   const navigate = useNavigate();
@@ -23,8 +24,11 @@ const RegisterCertificate = () => {
   });
 
   const [file, setFile] = useState(null);
+
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState("");
+
   const [success, setSuccess] = useState("");
 
   // Alterar campos
@@ -53,9 +57,11 @@ const RegisterCertificate = () => {
     setLoading(true);
 
     try {
-      const loggedUser = JSON.parse(localStorage.getItem("user"));
-      if (!loggedUser || !loggedUser.id) {
-        alert("Usuário não encontrado. Faça login novamente.");
+      // Verifica se existe token
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        alert("Sua sessão não foi encontrada. Faça login novamente.");
 
         navigate("/");
         return;
@@ -64,11 +70,12 @@ const RegisterCertificate = () => {
       // Criar FormData
       const data = new FormData();
 
-      // Usuário responsável pelo certificado
-      data.append("id_user", String(loggedUser.id));
       data.append("name_certificate", formData.name_certificate);
+
       data.append("institution_certificate", formData.institution_certificate);
+
       data.append("category_certificate", formData.category_certificate);
+
       data.append("date_conclusion", formData.date_conclusion);
 
       if (formData.date_validity) {
@@ -95,14 +102,10 @@ const RegisterCertificate = () => {
       }
 
       // Enviar para a API
-      const response = await axios.post(
-        "http://localhost:3000/certificates",
-        data,
-        {
-          timeout: 10000,
-        },
-      );
-      
+      await api.post("/certificates", data, {
+        timeout: 10000,
+      });
+
       setSuccess("Certificado cadastrado com sucesso!");
 
       // Limpar formulário
@@ -129,6 +132,14 @@ const RegisterCertificate = () => {
         "Erro ao cadastrar certificado:",
         error.response?.data || error.message,
       );
+
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        navigate("/");
+        return;
+      }
 
       if (error.code === "ECONNABORTED") {
         setError("O servidor demorou para responder. Verifique o backend.");

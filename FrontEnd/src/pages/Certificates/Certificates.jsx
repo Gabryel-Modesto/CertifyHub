@@ -14,17 +14,21 @@ import { useNavigate } from "react-router-dom";
 
 import { useEffect, useState } from "react";
 
-import axios from "axios";
+import api from "../../services/api.js";
 
 function Certificates() {
   const navigate = useNavigate();
 
   const [certificates, setCertificates] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
+
   const [category, setCategory] = useState("Todas");
+
   const [sort, setSort] = useState("recentes");
 
   // Buscar certificados do usuário logado
@@ -34,16 +38,14 @@ function Certificates() {
         setLoading(true);
         setError("");
 
-        const loggedUser = JSON.parse(localStorage.getItem("user"));
+        const token = localStorage.getItem("token");
 
-        if (!loggedUser || !loggedUser.id) {
+        if (!token) {
           navigate("/");
           return;
         }
 
-        const response = await axios.get(
-          `http://localhost:3000/certificates?id_user=${loggedUser.id}`,
-        );
+        const response = await api.get("/certificates");
 
         const certificatesData = Array.isArray(response.data)
           ? response.data
@@ -55,6 +57,14 @@ function Certificates() {
           "Erro ao buscar certificados:",
           error.response?.data || error.message,
         );
+
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+
+          navigate("/");
+          return;
+        }
 
         setError("Erro ao carregar certificados.");
       } finally {
@@ -93,6 +103,7 @@ function Certificates() {
         institutionName.includes(searchText)
       );
     })
+
     .filter((certificate) => {
       if (category === "Todas") {
         return true;
@@ -100,6 +111,7 @@ function Certificates() {
 
       return certificate.category_certificate === category;
     })
+
     .sort((a, b) => {
       if (sort === "recentes") {
         return new Date(b.date_conclusion) - new Date(a.date_conclusion);

@@ -1,5 +1,5 @@
 import styles from "./ResetPassword.module.css";
-import Footer from "../components/Footer/Footer.jsx";
+import Footer from "../../components/Footer/Footer.jsx";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 

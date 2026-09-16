@@ -6,8 +6,11 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useState } from "react";
 
+import axios from "axios";
+
 function Login() {
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
@@ -16,28 +19,18 @@ function Login() {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/users/login", {
-        method: "POST",
-
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+      const response = await axios.post("http://localhost:3000/users/login", {
+        email,
+        password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
-        alert(data.message);
-        return;
-      }
-
-      // Salva os dados do usuário logado
+      // Salva os dados do usuário
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Salva o JWT
+      localStorage.setItem("token", data.token);
 
       alert(data.message);
 
@@ -46,9 +39,7 @@ function Login() {
 
       navigate("/dashboard");
     } catch (error) {
-      console.error("Erro no login:", error);
-
-      alert("Erro ao conectar com o servidor");
+      alert(error.response?.data?.message || "Erro ao conectar com o servidor");
     }
   };
 
@@ -58,6 +49,7 @@ function Login() {
         <div className={styles.card}>
           <div className={styles.header}>
             <h1>CertifyHub</h1>
+
             <h2>Acesse sua conta</h2>
           </div>
 

@@ -9,17 +9,18 @@ import {
 } from "../controllers/certificateController.js";
 
 import upload from "../middlewares/upload.js";
+import auth from "../middlewares/auth.js";
 
 const router = express.Router();
 
-router.get("/", getCertificates);
+router.get("/", auth, getCertificates);
 
-router.get("/:id", getCertificateById);
+router.get("/:id", auth, getCertificateById);
 
-router.post("/", upload.single("file"), createCertificate);
+router.post("/", auth, upload.single("file"), createCertificate);
 
-router.put("/:id", upload.single("file"), updateCertificateController);
+router.put("/:id", auth, upload.single("file"), updateCertificateController);
 
-router.delete("/:id", deleteCertificateController);
+router.delete("/:id", auth, deleteCertificateController);
 
 export default router;
