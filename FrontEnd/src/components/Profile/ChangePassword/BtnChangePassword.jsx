@@ -3,6 +3,7 @@ import { useState } from "react";
 import api from "../../../services/api.js";
 
 import Alert from "../../Alert/Alert.jsx";
+
 import Loading from "../../Loading/Loading.jsx";
 
 import styles from "./BtnChangePassword.module.css";
@@ -11,11 +12,18 @@ function BtnChangePassword({ user }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
+
   const [newPassword, setNewPassword] = useState("");
+
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
+
   const [alert, setAlert] = useState(null);
+
+  // =========================================
+  // ABRIR MODAL
+  // =========================================
 
   const handleOpen = () => {
     setCurrentPassword("");
@@ -26,8 +34,14 @@ function BtnChangePassword({ user }) {
     setIsOpen(true);
   };
 
+  // =========================================
+  // FECHAR MODAL
+  // =========================================
+
   const handleClose = () => {
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     setCurrentPassword("");
     setNewPassword("");
@@ -37,12 +51,19 @@ function BtnChangePassword({ user }) {
     setIsOpen(false);
   };
 
+  // =========================================
+  // ALTERAR SENHA
+  // =========================================
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     setAlert(null);
 
-    // Validar campos
+    // =========================================
+    // VALIDAÇÕES
+    // =========================================
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       setAlert({
         message: "Preencha todos os campos.",
@@ -52,7 +73,15 @@ function BtnChangePassword({ user }) {
       return;
     }
 
-    // Verificar se as novas senhas são iguais
+    if (newPassword.length < 6) {
+      setAlert({
+        message: "A nova senha deve possuir pelo menos 6 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setAlert({
         message: "As novas senhas não coincidem.",
@@ -62,15 +91,18 @@ function BtnChangePassword({ user }) {
       return;
     }
 
-    // Verificar tamanho da senha
-    if (newPassword.length < 6) {
+    if (newPassword === currentPassword) {
       setAlert({
-        message: "A nova senha deve possuir pelo menos 6 caracteres.",
+        message: "A nova senha deve ser diferente da senha atual.",
         type: "warning",
       });
 
       return;
     }
+
+    // =========================================
+    // REQUISIÇÃO
+    // =========================================
 
     try {
       setLoading(true);
@@ -85,7 +117,7 @@ function BtnChangePassword({ user }) {
       setNewPassword("");
       setConfirmPassword("");
 
-      // Alert de sucesso
+      // Mostrar sucesso
       setAlert({
         message: response.data.message || "Senha alterada com sucesso!",
         type: "success",
@@ -109,6 +141,16 @@ function BtnChangePassword({ user }) {
         setTimeout(() => {
           window.location.href = "/";
         }, 1500);
+
+        return;
+      }
+
+      // Erro de validação
+      if (error.response?.status === 400) {
+        setAlert({
+          message: error.response?.data?.message || "Dados inválidos.",
+          type: "warning",
+        });
 
         return;
       }

@@ -3,6 +3,7 @@ import { useState } from "react";
 import api from "../../../services/api.js";
 
 import Alert from "../../Alert/Alert.jsx";
+
 import Loading from "../../Loading/Loading.jsx";
 
 import styles from "./BtnEditUser.module.css";
@@ -16,43 +17,132 @@ function BtnEditUser({ user, onUserUpdated }) {
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(null);
 
+  // =========================================
+  // ABRIR EDIÇÃO
+  // =========================================
+
   const handleOpen = () => {
     setName(user.name);
     setEmail(user.email);
     setAlert(null);
+
     setIsEditing(true);
   };
 
+  // =========================================
+  // CANCELAR
+  // =========================================
+
   const handleCancel = () => {
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     setName(user.name);
     setEmail(user.email);
     setAlert(null);
+
     setIsEditing(false);
   };
+
+  // =========================================
+  // SALVAR
+  // =========================================
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     setAlert(null);
 
-    // Validar campos
-    if (!name.trim() || !email.trim()) {
+    // =========================================
+    // NORMALIZAÇÃO
+    // =========================================
+
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // =========================================
+    // VALIDAÇÕES
+    // =========================================
+
+    // Nome obrigatório
+    if (!normalizedName) {
       setAlert({
-        message: "Preencha todos os campos.",
+        message: "Informe seu nome.",
         type: "warning",
       });
 
       return;
     }
 
+    // Nome mínimo
+    if (normalizedName.length < 3) {
+      setAlert({
+        message: "O nome deve possuir pelo menos 3 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Nome máximo
+    if (normalizedName.length > 150) {
+      setAlert({
+        message: "O nome deve possuir no máximo 150 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // E-mail obrigatório
+    if (!normalizedEmail) {
+      setAlert({
+        message: "Informe seu e-mail.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // E-mail válido
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(normalizedEmail)) {
+      setAlert({
+        message: "Informe um e-mail válido.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // =========================================
+    // VERIFICAR SE HOUVE ALTERAÇÃO
+    // =========================================
+
+    const currentName = user.name.trim();
+    const currentEmail = user.email.trim().toLowerCase();
+
+    if (normalizedName === currentName && normalizedEmail === currentEmail) {
+      setAlert({
+        message: "Nenhuma alteração foi realizada.",
+        type: "info",
+      });
+
+      return;
+    }
+
+    // =========================================
+    // ATUALIZAR USUÁRIO
+    // =========================================
+
     try {
       setLoading(true);
 
       const response = await api.put(`/users/${user.id}`, {
-        name: name.trim(),
-        email: email.trim(),
+        name: normalizedName,
+        email: normalizedEmail,
       });
 
       const updatedUser = response.data.user;
@@ -60,11 +150,17 @@ function BtnEditUser({ user, onUserUpdated }) {
       // Atualizar usuário salvo
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
-      // Atualizar usuário no Profile
+      // Atualizar Profile
       onUserUpdated(updatedUser);
 
       // Fechar modal
       setIsEditing(false);
+
+      // Alert de sucesso
+      setAlert({
+        message: response.data.message || "Usuário atualizado com sucesso!",
+        type: "success",
+      });
     } catch (error) {
       console.error(
         "Erro ao atualizar usuário:",
@@ -84,6 +180,28 @@ function BtnEditUser({ user, onUserUpdated }) {
         setTimeout(() => {
           window.location.href = "/";
         }, 1500);
+
+        return;
+      }
+
+      // E-mail já utilizado
+      if (error.response?.status === 409) {
+        setAlert({
+          message:
+            error.response?.data?.message ||
+            "Este e-mail já está sendo utilizado.",
+          type: "error",
+        });
+
+        return;
+      }
+
+      // Erro de validação
+      if (error.response?.status === 400) {
+        setAlert({
+          message: error.response?.data?.message || "Dados inválidos.",
+          type: "warning",
+        });
 
         return;
       }
@@ -149,6 +267,7 @@ function BtnEditUser({ user, onUserUpdated }) {
                   type="text"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
+                  maxLength={150}
                   required
                   disabled={loading}
                 />

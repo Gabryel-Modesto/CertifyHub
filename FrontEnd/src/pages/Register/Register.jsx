@@ -1,30 +1,131 @@
 import styles from "./Register.module.css";
 
 import { Link, useNavigate } from "react-router-dom";
+
 import { useState } from "react";
 
 import Footer from "../../components/Footer/Footer.jsx";
+
 import Alert from "../../components/Alert/Alert.jsx";
+
+import Loading from "../../components/Loading/Loading.jsx";
 
 import api from "../../services/api.js";
 
 function Register() {
   const [name, setName] = useState("");
+
   const [email, setEmail] = useState("");
+
   const [password, setPassword] = useState("");
+
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
+
   const [alert, setAlert] = useState(null);
 
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const handleRegister = async (event) => {
+    event.preventDefault();
 
     setAlert(null);
 
-    // Verificar se as senhas são iguais
+    // =========================================
+    // NORMALIZAÇÃO
+    // =========================================
+
+    const normalizedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // =========================================
+    // VALIDAÇÕES
+    // =========================================
+
+    // Nome obrigatório
+    if (!normalizedName) {
+      setAlert({
+        message: "Informe seu nome.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Nome mínimo
+    if (normalizedName.length < 3) {
+      setAlert({
+        message: "O nome deve possuir pelo menos 3 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Nome máximo
+    if (normalizedName.length > 150) {
+      setAlert({
+        message: "O nome deve possuir no máximo 150 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // E-mail obrigatório
+    if (!normalizedEmail) {
+      setAlert({
+        message: "Informe seu e-mail.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // E-mail válido
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(normalizedEmail)) {
+      setAlert({
+        message: "Informe um e-mail válido.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Senha obrigatória
+    if (!password) {
+      setAlert({
+        message: "Informe uma senha.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Senha mínima
+    if (password.length < 6) {
+      setAlert({
+        message: "A senha deve possuir pelo menos 6 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Confirmar senha
+    if (!confirmPassword) {
+      setAlert({
+        message: "Confirme sua senha.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Senhas iguais
     if (password !== confirmPassword) {
       setAlert({
         message: "As senhas precisam ser iguais!",
@@ -34,13 +135,16 @@ function Register() {
       return;
     }
 
+    // =========================================
+    // CADASTRO
+    // =========================================
+
     setLoading(true);
 
     try {
-      // Criar usuário
       await api.post("/users", {
-        name,
-        email,
+        name: normalizedName,
+        email: normalizedEmail,
         password,
       });
 
@@ -66,6 +170,7 @@ function Register() {
         error.response?.data || error.message,
       );
 
+      // Erro de validação
       if (error.response?.status === 400) {
         setAlert({
           message:
@@ -76,6 +181,19 @@ function Register() {
         return;
       }
 
+      // E-mail já utilizado
+      if (error.response?.status === 409) {
+        setAlert({
+          message:
+            error.response?.data?.message ||
+            "Este e-mail já está sendo utilizado.",
+          type: "error",
+        });
+
+        return;
+      }
+
+      // Timeout
       if (error.code === "ECONNABORTED") {
         setAlert({
           message: "O servidor demorou para responder. Verifique o backend.",
@@ -85,6 +203,7 @@ function Register() {
         return;
       }
 
+      // Outros erros
       setAlert({
         message:
           error.response?.data?.message || "Erro ao conectar com o servidor.",
@@ -97,6 +216,9 @@ function Register() {
 
   return (
     <div className={styles.container}>
+      {/* LOADING */}
+      {loading && <Loading message="Criando conta..." />}
+
       {/* ALERT */}
       {alert && (
         <Alert
@@ -125,8 +247,10 @@ function Register() {
                 type="text"
                 placeholder="Informe seu nome"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(event) => setName(event.target.value)}
+                maxLength={150}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -138,8 +262,9 @@ function Register() {
                 type="email"
                 placeholder="Informe seu email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -151,8 +276,10 @@ function Register() {
                 type="password"
                 placeholder="Crie uma senha"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) => setPassword(event.target.value)}
+                minLength={6}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -164,8 +291,10 @@ function Register() {
                 type="password"
                 placeholder="Confirme sua senha"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                minLength={6}
                 required
+                disabled={loading}
               />
             </div>
 

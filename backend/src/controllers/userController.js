@@ -21,18 +21,102 @@ import crypto from "crypto";
 import transporter from "../config/mail.js";
 import jwt from "jsonwebtoken";
 
-// Criar usuário
+// ==========================================
+// VALIDAR E-MAIL
+// ==========================================
+
+const isValidEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  return emailRegex.test(email);
+};
+
+// ==========================================
+// CRIAR USUÁRIO
+// ==========================================
+
 const createUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // ==========================================
+    // VALIDAÇÕES
+    // ==========================================
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Nome, e-mail e senha são obrigatórios.",
+      });
+    }
+
+    const normalizedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedName) {
+      return res.status(400).json({
+        message: "Informe seu nome.",
+      });
+    }
+
+    if (normalizedName.length < 3) {
+      return res.status(400).json({
+        message: "O nome deve possuir pelo menos 3 caracteres.",
+      });
+    }
+
+    if (normalizedName.length > 150) {
+      return res.status(400).json({
+        message: "O nome deve possuir no máximo 150 caracteres.",
+      });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({
+        message: "Informe um e-mail válido.",
+      });
+    }
+
+    if (normalizedEmail.length > 250) {
+      return res.status(400).json({
+        message: "O e-mail deve possuir no máximo 250 caracteres.",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "A senha deve possuir pelo menos 6 caracteres.",
+      });
+    }
+
+    // ==========================================
+    // VERIFICAR E-MAIL DUPLICADO
+    // ==========================================
+
+    const existingUser = await selectUserByEmail(normalizedEmail);
+
+    if (existingUser) {
+      return res.status(409).json({
+        message: "Este e-mail já está sendo utilizado.",
+      });
+    }
+
+    // ==========================================
+    // CRIPTOGRAFAR SENHA
+    // ==========================================
 
     const hashPassword = await bcrypt.hash(password, 10);
 
-    const user = await insertUser(name, normalizedEmail, hashPassword);
+    // ==========================================
+    // CRIAR USUÁRIO
+    // ==========================================
 
-    res.status(201).json({
+    const user = await insertUser(
+      normalizedName,
+      normalizedEmail,
+      hashPassword,
+    );
+
+    return res.status(201).json({
       message: "Usuário criado com sucesso!",
       user: {
         id: user.id_user,
@@ -43,13 +127,16 @@ const createUser = async (req, res) => {
   } catch (error) {
     console.error("Erro ao criar usuário:", error);
 
-    res.status(500).json({
-      message: "Erro ao criar usuário",
+    return res.status(500).json({
+      message: "Erro ao criar usuário.",
     });
   }
 };
 
-// Buscar todos os usuários
+// ==========================================
+// BUSCAR TODOS OS USUÁRIOS
+// ==========================================
+
 const getUsers = async (req, res) => {
   try {
     const users = await selectUsers();
@@ -60,32 +147,36 @@ const getUsers = async (req, res) => {
       email: user.email_user,
     }));
 
-    res.status(200).json({
+    return res.status(200).json({
       users: formattedUsers,
     });
   } catch (error) {
     console.error("Erro ao buscar usuários:", error);
 
-    res.status(500).json({
-      message: "Erro ao buscar usuários",
+    return res.status(500).json({
+      message: "Erro ao buscar usuários.",
     });
   }
 };
 
-// Buscar usuário por ID
+// ==========================================
+// BUSCAR USUÁRIO POR ID
+// ==========================================
+
 const getUserById = async (req, res) => {
   try {
-    const userId = req.params.id;
+    // ID vem do JWT
+    const userId = req.user.id;
 
     const user = await selectedUserByid(userId);
 
     if (!user) {
       return res.status(404).json({
-        message: "Usuário não encontrado!",
+        message: "Usuário não encontrado.",
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       user: {
         id: user.id_user,
         name: user.name_user,
@@ -95,106 +186,134 @@ const getUserById = async (req, res) => {
   } catch (error) {
     console.error("Erro ao buscar usuário:", error);
 
-    res.status(500).json({
-      message: "Erro ao buscar usuário",
+    return res.status(500).json({
+      message: "Erro ao buscar usuário.",
     });
   }
 };
 
-// Login
+// ==========================================
+// LOGIN
+// ==========================================
+
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // ==========================================
+    // VALIDAÇÕES BÁSICAS
+    // ==========================================
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Informe o e-mail e a senha.",
+      });
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({
+        message: "Informe um e-mail válido.",
+      });
+    }
+
+    // ==========================================
+    // BUSCAR USUÁRIO
+    // ==========================================
 
     const user = await selectUserByEmail(normalizedEmail);
 
-    // =====================================================
+    // ==========================================
     // E-MAIL NÃO EXISTE
-    // =====================================================
+    // ==========================================
 
     if (!user) {
       const attempt = await getLoginAttemptByEmail(normalizedEmail);
 
-      // Verifica se o e-mail está bloqueado
+      // Verificar bloqueio
       if (
         attempt?.blocked_until &&
         new Date(attempt.blocked_until) > new Date()
       ) {
         return res.status(403).json({
           message: "Muitas tentativas incorretas. Tente novamente mais tarde.",
+          blockedUntil: attempt.blocked_until,
         });
       }
 
-      // Incrementa tentativa
+      // Incrementar tentativa
       const updatedAttempt =
         await incrementLoginAttemptsByEmail(normalizedEmail);
 
-      // Bloqueia após 5 tentativas
+      // Bloquear após 5 tentativas
       if (updatedAttempt.attempts >= 5) {
-        await blockLoginAttemptsByEmail(normalizedEmail);
+        const blockedAttempt = await blockLoginAttemptsByEmail(normalizedEmail);
 
         return res.status(403).json({
-          message: "Muitas tentativas incorretas. Tente novamente mais tarde.",
+          message:
+            "Muitas tentativas incorretas. Sua tentativa foi bloqueada por 2 minutos.",
+          blockedUntil: blockedAttempt.blocked_until,
         });
       }
 
       return res.status(401).json({
-        message: "Usuário ou senha inválidos",
+        message: "Usuário ou senha inválidos.",
       });
     }
 
-    // =====================================================
+    // ==========================================
     // CONTA BLOQUEADA
-    // =====================================================
+    // ==========================================
 
     if (user.blocked_until && new Date(user.blocked_until) > new Date()) {
       return res.status(403).json({
         message:
           "Sua conta está temporariamente bloqueada. Tente novamente mais tarde.",
+        blockedUntil: user.blocked_until,
       });
     }
 
-    // =====================================================
-    // VERIFICA SENHA
-    // =====================================================
+    // ==========================================
+    // VERIFICAR SENHA
+    // ==========================================
 
     const passwordMatch = await bcrypt.compare(password, user.password_user);
 
-    // =====================================================
+    // ==========================================
     // SENHA INCORRETA
-    // =====================================================
+    // ==========================================
 
     if (!passwordMatch) {
       const updatedUser = await incrementLoginAttempts(user.id_user);
 
-      // Bloqueia após 5 tentativas
+      // Bloquear após 5 tentativas
       if (updatedUser.login_attempts >= 5) {
-        await blockUser(user.id_user);
+        const blockedUser = await blockUser(user.id_user);
 
         return res.status(403).json({
           message:
-            "Sua conta foi bloqueada temporariamente após 5 tentativas incorretas.",
+            "Sua conta foi bloqueada temporariamente após 5 tentativas incorretas. Aguarde 2 minutos.",
+          blockedUntil: blockedUser.blocked_until,
         });
       }
 
       return res.status(401).json({
-        message: "Usuário ou senha inválidos",
+        message: "Usuário ou senha inválidos.",
       });
     }
 
-    // =====================================================
+    // ==========================================
     // LOGIN CORRETO
-    // =====================================================
+    // ==========================================
 
     await resetLoginAttempts(user.id_user);
 
     await resetLoginAttemptsByEmail(normalizedEmail);
 
-    // =====================================================
-    // GERA JWT
-    // =====================================================
+    // ==========================================
+    // GERAR JWT
+    // ==========================================
 
     const token = jwt.sign(
       {
@@ -221,20 +340,36 @@ const loginUser = async (req, res) => {
     console.error("Erro ao realizar login:", error);
 
     return res.status(500).json({
-      message: "Erro ao realizar login",
+      message: "Erro ao realizar login.",
     });
   }
 };
 
-// Solicitar recuperação de senha
+// ==========================================
+// SOLICITAR RECUPERAÇÃO DE SENHA
+// ==========================================
+
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({
+        message: "Informe seu e-mail.",
+      });
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({
+        message: "Informe um e-mail válido.",
+      });
+    }
 
     const user = await selectUserByEmail(normalizedEmail);
 
+    // Resposta genérica
     if (!user) {
       return res.status(200).json({
         message:
@@ -242,11 +377,19 @@ const forgotPassword = async (req, res) => {
       });
     }
 
+    // ==========================================
+    // GERAR TOKEN
+    // ==========================================
+
     const token = crypto.randomBytes(32).toString("hex");
 
     await saveResetToken(user.id_user, token);
 
     const resetLink = `http://localhost:5173/reset-password?token=${token}`;
+
+    // ==========================================
+    // ENVIAR E-MAIL
+    // ==========================================
 
     await transporter.sendMail({
       from: `"CertifyHub" <${process.env.EMAIL_USER}>`,
@@ -292,16 +435,37 @@ const forgotPassword = async (req, res) => {
   }
 };
 
-// Redefinir senha
+// ==========================================
+// REDEFINIR SENHA
+// ==========================================
+
 const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        message: "Token de recuperação não informado.",
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        message: "Informe a nova senha.",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "A senha deve possuir pelo menos 6 caracteres.",
+      });
+    }
 
     const user = await selectUserByResetToken(token);
 
     if (!user) {
       return res.status(400).json({
-        message: "Token inválido ou expirado",
+        message: "Token inválido ou expirado.",
       });
     }
 
@@ -316,16 +480,25 @@ const resetPassword = async (req, res) => {
     console.error("Erro ao redefinir senha:", error);
 
     return res.status(500).json({
-      message: "Erro ao redefinir senha",
+      message: "Erro ao redefinir senha.",
     });
   }
 };
 
-// Atualizar usuário
+// ==========================================
+// ATUALIZAR USUÁRIO
+// ==========================================
+
 const updateUserController = async (req, res) => {
   try {
-    const { id } = req.params;
+    // ID vem do JWT
+    const userId = req.user.id;
+
     const { name, email } = req.body;
+
+    // ==========================================
+    // VALIDAÇÕES
+    // ==========================================
 
     if (!name || !email) {
       return res.status(400).json({
@@ -333,9 +506,44 @@ const updateUserController = async (req, res) => {
       });
     }
 
+    const normalizedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
 
-    const existingUser = await selectedUserByid(id);
+    if (!normalizedName) {
+      return res.status(400).json({
+        message: "Informe seu nome.",
+      });
+    }
+
+    if (normalizedName.length < 3) {
+      return res.status(400).json({
+        message: "O nome deve possuir pelo menos 3 caracteres.",
+      });
+    }
+
+    if (normalizedName.length > 150) {
+      return res.status(400).json({
+        message: "O nome deve possuir no máximo 150 caracteres.",
+      });
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      return res.status(400).json({
+        message: "Informe um e-mail válido.",
+      });
+    }
+
+    if (normalizedEmail.length > 250) {
+      return res.status(400).json({
+        message: "O e-mail deve possuir no máximo 250 caracteres.",
+      });
+    }
+
+    // ==========================================
+    // VERIFICAR USUÁRIO
+    // ==========================================
+
+    const existingUser = await selectedUserByid(userId);
 
     if (!existingUser) {
       return res.status(404).json({
@@ -343,15 +551,23 @@ const updateUserController = async (req, res) => {
       });
     }
 
+    // ==========================================
+    // VERIFICAR E-MAIL
+    // ==========================================
+
     const emailUser = await selectUserByEmail(normalizedEmail);
 
-    if (emailUser && emailUser.id_user !== Number(id)) {
+    if (emailUser && emailUser.id_user !== Number(userId)) {
       return res.status(409).json({
         message: "Este e-mail já está sendo utilizado.",
       });
     }
 
-    const user = await updateUser(id, name, normalizedEmail);
+    // ==========================================
+    // ATUALIZAR
+    // ==========================================
+
+    const user = await updateUser(userId, normalizedName, normalizedEmail);
 
     return res.status(200).json({
       message: "Usuário atualizado com sucesso!",
@@ -371,11 +587,20 @@ const updateUserController = async (req, res) => {
   }
 };
 
-// Alterar senha
+// ==========================================
+// ALTERAR SENHA
+// ==========================================
+
 const changePasswordController = async (req, res) => {
   try {
-    const { id } = req.params;
+    // ID vem do JWT
+    const userId = req.user.id;
+
     const { currentPassword, newPassword } = req.body;
+
+    // ==========================================
+    // VALIDAÇÕES
+    // ==========================================
 
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
@@ -389,13 +614,21 @@ const changePasswordController = async (req, res) => {
       });
     }
 
-    const user = await selectedUserByid(id);
+    // ==========================================
+    // BUSCAR USUÁRIO
+    // ==========================================
+
+    const user = await selectedUserByid(userId);
 
     if (!user) {
       return res.status(404).json({
         message: "Usuário não encontrado.",
       });
     }
+
+    // ==========================================
+    // VERIFICAR SENHA ATUAL
+    // ==========================================
 
     const passwordMatch = await bcrypt.compare(
       currentPassword,
@@ -408,6 +641,10 @@ const changePasswordController = async (req, res) => {
       });
     }
 
+    // ==========================================
+    // VERIFICAR SE A NOVA É IGUAL
+    // ==========================================
+
     const samePassword = await bcrypt.compare(newPassword, user.password_user);
 
     if (samePassword) {
@@ -415,6 +652,10 @@ const changePasswordController = async (req, res) => {
         message: "A nova senha deve ser diferente da senha atual.",
       });
     }
+
+    // ==========================================
+    // ATUALIZAR SENHA
+    // ==========================================
 
     const hashPassword = await bcrypt.hash(newPassword, 10);
 
@@ -431,6 +672,10 @@ const changePasswordController = async (req, res) => {
     });
   }
 };
+
+// ==========================================
+// EXPORT
+// ==========================================
 
 export default {
   createUser,

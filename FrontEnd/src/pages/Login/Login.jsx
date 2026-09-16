@@ -1,8 +1,12 @@
 import styles from "./Login.module.css";
 
 import Footer from "../../components/Footer/Footer.jsx";
+
 import Alert from "../../components/Alert/Alert.jsx";
+
 import Loading from "../../components/Loading/Loading.jsx";
+
+import Countdown from "../../components/Countdown/Countdown.jsx";
 
 import { Link, useNavigate } from "react-router-dom";
 
@@ -16,6 +20,7 @@ function Login() {
 
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState(null);
+  const [blockedUntil, setBlockedUntil] = useState(null);
 
   const navigate = useNavigate();
 
@@ -23,11 +28,65 @@ function Login() {
     event.preventDefault();
 
     setAlert(null);
+
+    // =========================================
+    // VALIDAÇÕES
+    // =========================================
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!normalizedEmail) {
+      setAlert({
+        message: "Informe seu e-mail.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(normalizedEmail)) {
+      setAlert({
+        message: "Informe um e-mail válido.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    if (!trimmedPassword) {
+      setAlert({
+        message: "Informe sua senha.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    if (password.length < 6) {
+      setAlert({
+        message: "A senha deve possuir pelo menos 6 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    if (blockedUntil) {
+      return;
+    }
+
+    // =========================================
+    // LOGIN
+    // =========================================
+
     setLoading(true);
 
     try {
       const response = await api.post("/users/login", {
-        email,
+        email: normalizedEmail,
         password,
       });
 
@@ -38,6 +97,9 @@ function Login() {
 
       // Salva o JWT
       localStorage.setItem("token", data.token);
+
+      // Remove bloqueio
+      setBlockedUntil(null);
 
       // Limpar formulário
       setEmail("");
@@ -59,6 +121,31 @@ function Login() {
         error.response?.data || error.message,
       );
 
+      // =========================================
+      // CONTA/E-MAIL BLOQUEADO
+      // =========================================
+
+      if (error.response?.status === 403) {
+        const blockedTime = error.response?.data?.blockedUntil;
+
+        if (blockedTime) {
+          setBlockedUntil(blockedTime);
+        }
+
+        setAlert({
+          message:
+            error.response?.data?.message ||
+            "Acesso temporariamente bloqueado.",
+          type: "error",
+        });
+
+        return;
+      }
+
+      // =========================================
+      // OUTROS ERROS
+      // =========================================
+
       setAlert({
         message:
           error.response?.data?.message || "Erro ao conectar com o servidor.",
@@ -67,6 +154,11 @@ function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCountdownFinish = () => {
+    setBlockedUntil(null);
+    setAlert(null);
   };
 
   return (
@@ -102,7 +194,7 @@ function Login() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
-                disabled={loading}
+                disabled={loading || blockedUntil}
               />
             </div>
 
@@ -116,7 +208,7 @@ function Login() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
-                disabled={loading}
+                disabled={loading || blockedUntil}
               />
 
               <div className={styles.forgotPassword}>
@@ -124,9 +216,17 @@ function Login() {
               </div>
             </div>
 
+            {/* CONTADOR */}
+            {blockedUntil && (
+              <Countdown
+                blockedUntil={blockedUntil}
+                onFinish={handleCountdownFinish}
+              />
+            )}
+
             {/* BOTÃO */}
-            <button type="submit" disabled={loading}>
-              {loading ? "Entrando..." : "Entrar"}
+            <button type="submit" disabled={loading || blockedUntil}>
+              {loading ? "Entrando..." : blockedUntil ? "Aguarde..." : "Entrar"}
             </button>
           </form>
 

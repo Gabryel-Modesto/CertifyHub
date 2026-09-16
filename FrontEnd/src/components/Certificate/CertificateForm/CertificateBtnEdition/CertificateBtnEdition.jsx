@@ -49,7 +49,36 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
 
-    setFile(selectedFile || null);
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
+
+    // Tipos permitidos
+    const allowedTypes = ["application/pdf", "image/png", "image/jpeg"];
+
+    if (!allowedTypes.includes(selectedFile.type)) {
+      alert("Arquivo inválido. Selecione um PDF, PNG, JPG ou JPEG.");
+
+      event.target.value = "";
+      setFile(null);
+
+      return;
+    }
+
+    // Limite de 5 MB
+    const maxSize = 5 * 1024 * 1024;
+
+    if (selectedFile.size > maxSize) {
+      alert("O arquivo deve possuir no máximo 5 MB.");
+
+      event.target.value = "";
+      setFile(null);
+
+      return;
+    }
+
+    setFile(selectedFile);
   };
 
   // =========================================
@@ -59,7 +88,125 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
   const handleSubmit = (event) => {
     event.preventDefault();
 
-    onSave(formData, file);
+    // =========================================
+    // NORMALIZAÇÃO
+    // =========================================
+
+    const name = formData.name_certificate.trim();
+
+    const institution = formData.institution_certificate.trim();
+
+    const category = formData.category_certificate.trim();
+
+    const certificationCode = formData.certification_code.trim();
+
+    const validationLink = formData.validation_link.trim();
+
+    const description = formData.description.trim();
+
+    // =========================================
+    // VALIDAÇÕES
+    // =========================================
+
+    // Nome
+    if (!name) {
+      alert("Informe o nome do certificado.");
+      return;
+    }
+
+    if (name.length > 250) {
+      alert("O nome do certificado deve possuir no máximo 250 caracteres.");
+      return;
+    }
+
+    // Instituição
+    if (!institution) {
+      alert("Informe a instituição.");
+      return;
+    }
+
+    if (institution.length > 250) {
+      alert("A instituição deve possuir no máximo 250 caracteres.");
+      return;
+    }
+
+    // Categoria
+    if (!category) {
+      alert("Selecione uma categoria.");
+      return;
+    }
+
+    // Data de emissão
+    if (!formData.date_conclusion) {
+      alert("Informe a data de emissão.");
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const conclusionDate = new Date(`${formData.date_conclusion}T00:00:00`);
+
+    if (conclusionDate > today) {
+      alert("A data de emissão não pode ser futura.");
+      return;
+    }
+
+    // Data de validade
+    if (formData.date_validity) {
+      const validityDate = new Date(`${formData.date_validity}T00:00:00`);
+
+      if (validityDate < conclusionDate) {
+        alert("A data de validade não pode ser anterior à data de emissão.");
+        return;
+      }
+    }
+
+    // Carga horária
+    if (!formData.hours_certificate) {
+      alert("Informe a carga horária.");
+      return;
+    }
+
+    const hours = Number(formData.hours_certificate);
+
+    if (!Number.isInteger(hours) || hours <= 0) {
+      alert("A carga horária deve ser um número inteiro maior que zero.");
+      return;
+    }
+
+    // Código
+    if (certificationCode.length > 250) {
+      alert("O código de certificação deve possuir no máximo 250 caracteres.");
+      return;
+    }
+
+    // Link
+    if (validationLink) {
+      try {
+        new URL(validationLink);
+      } catch {
+        alert("Informe um link de validação válido.");
+        return;
+      }
+    }
+
+    // =========================================
+    // ENVIAR PARA O PAI
+    // =========================================
+
+    const validatedData = {
+      ...formData,
+      name_certificate: name,
+      institution_certificate: institution,
+      category_certificate: category,
+      certification_code: certificationCode,
+      validation_link: validationLink,
+      description,
+      hours_certificate: hours,
+    };
+
+    onSave(validatedData, file);
   };
 
   return (
@@ -77,6 +224,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.name_certificate}
           onChange={handleChange}
           required
+          maxLength={250}
           disabled={saving}
         />
       </div>
@@ -94,6 +242,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.institution_certificate}
           onChange={handleChange}
           required
+          maxLength={250}
           disabled={saving}
         />
       </div>
@@ -143,6 +292,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
             value={formData.hours_certificate}
             onChange={handleChange}
             min="1"
+            step="1"
             required
             disabled={saving}
           />
@@ -184,6 +334,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.certification_code}
           onChange={handleChange}
           placeholder="Ex: CERT-2026-001"
+          maxLength={250}
           disabled={saving}
         />
       </div>

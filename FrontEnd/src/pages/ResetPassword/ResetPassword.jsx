@@ -1,7 +1,9 @@
 import styles from "./ResetPassword.module.css";
 
 import Footer from "../../components/Footer/Footer.jsx";
+
 import Alert from "../../components/Alert/Alert.jsx";
+
 import Loading from "../../components/Loading/Loading.jsx";
 
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -28,8 +30,11 @@ function ResetPassword() {
 
     setAlert(null);
 
-    // Verificar token
-    if (!token) {
+    // =========================================
+    // VALIDAR TOKEN
+    // =========================================
+
+    if (!token || !token.trim()) {
       setAlert({
         message: "Token de recuperação inválido.",
         type: "error",
@@ -38,27 +43,32 @@ function ResetPassword() {
       return;
     }
 
-    // Verificar campos
-    if (!password || !confirmPassword) {
+    // =========================================
+    // VALIDAR CAMPOS
+    // =========================================
+
+    if (!password) {
       setAlert({
-        message: "Preencha todos os campos.",
+        message: "Informe sua nova senha.",
         type: "warning",
       });
 
       return;
     }
 
-    // Verificar senhas
-    if (password !== confirmPassword) {
+    if (!confirmPassword) {
       setAlert({
-        message: "As senhas não coincidem.",
-        type: "error",
+        message: "Confirme sua nova senha.",
+        type: "warning",
       });
 
       return;
     }
 
-    // Verificar tamanho
+    // =========================================
+    // VALIDAR TAMANHO DA SENHA
+    // =========================================
+
     if (password.length < 6) {
       setAlert({
         message: "A senha deve possuir pelo menos 6 caracteres.",
@@ -68,9 +78,26 @@ function ResetPassword() {
       return;
     }
 
-    try {
-      setLoading(true);
+    // =========================================
+    // VALIDAR CONFIRMAÇÃO
+    // =========================================
 
+    if (password !== confirmPassword) {
+      setAlert({
+        message: "As senhas não coincidem.",
+        type: "error",
+      });
+
+      return;
+    }
+
+    // =========================================
+    // REDEFINIR SENHA
+    // =========================================
+
+    setLoading(true);
+
+    try {
       const response = await api.post("/users/reset-password", {
         token,
         password,
@@ -96,6 +123,18 @@ function ResetPassword() {
         error.response?.data || error.message,
       );
 
+      // Token inválido ou expirado
+      if (error.response?.status === 400) {
+        setAlert({
+          message:
+            error.response?.data?.message || "Token inválido ou expirado.",
+          type: "error",
+        });
+
+        return;
+      }
+
+      // Erro do servidor
       setAlert({
         message: error.response?.data?.message || "Erro ao redefinir senha.",
         type: "error",

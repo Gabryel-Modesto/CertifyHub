@@ -114,7 +114,7 @@ async function blockUser(id) {
       `
       UPDATE users
       SET
-        blocked_until = NOW() + INTERVAL '15 minutes',
+        blocked_until = NOW() + INTERVAL '2 minutes',
         login_attempts = 0
       WHERE id_user = $1
       RETURNING *
@@ -137,7 +137,7 @@ async function saveResetToken(id, token) {
       UPDATE users
       SET
         reset_token = $1,
-        reset_token_expires = NOW() + INTERVAL '300 seconds'
+        reset_token_expires = NOW() + INTERVAL '5 minutes'
       WHERE id_user = $2
       RETURNING *
       `,
@@ -265,7 +265,7 @@ async function blockLoginAttemptsByEmail(email) {
     const res = await client.query(
       `
       UPDATE login_attempts
-      SET blocked_until = NOW() + INTERVAL '15 minutes'
+      SET blocked_until = NOW() + INTERVAL '2 minutes'
       WHERE email = $1
       RETURNING *
       `,

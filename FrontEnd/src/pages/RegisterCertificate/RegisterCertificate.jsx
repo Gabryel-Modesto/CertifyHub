@@ -2,8 +2,10 @@ import styles from "./RegisterCertificate.module.css";
 
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 import Alert from "../../components/Alert/Alert.jsx";
+import Loading from "../../components/Loading/Loading.jsx";
 
 import { useState } from "react";
+
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
@@ -24,11 +26,15 @@ const RegisterCertificate = () => {
   });
 
   const [file, setFile] = useState(null);
+
   const [loading, setLoading] = useState(false);
 
   const [alert, setAlert] = useState(null);
 
-  // Alterar campos
+  // =========================================
+  // ALTERAR CAMPOS
+  // =========================================
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -38,45 +44,247 @@ const RegisterCertificate = () => {
     }));
   };
 
-  // Selecionar arquivo
+  // =========================================
+  // SELECIONAR ARQUIVO
+  // =========================================
+
   const handleFileChange = (event) => {
     const selectedFile = event.target.files[0];
 
-    setFile(selectedFile || null);
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
+
+    // Tipos permitidos
+    const allowedTypes = ["application/pdf", "image/png", "image/jpeg"];
+
+    if (!allowedTypes.includes(selectedFile.type)) {
+      setAlert({
+        message: "Arquivo inválido. Selecione um PDF, PNG, JPG ou JPEG.",
+        type: "warning",
+      });
+
+      event.target.value = "";
+      setFile(null);
+
+      return;
+    }
+
+    // Limite de 5 MB
+    const maxSize = 5 * 1024 * 1024;
+
+    if (selectedFile.size > maxSize) {
+      setAlert({
+        message: "O arquivo deve possuir no máximo 5 MB.",
+        type: "warning",
+      });
+
+      event.target.value = "";
+      setFile(null);
+
+      return;
+    }
+
+    setAlert(null);
+    setFile(selectedFile);
   };
 
-  // Cadastrar certificado
+  // =========================================
+  // CADASTRAR CERTIFICADO
+  // =========================================
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     setAlert(null);
-    setLoading(true);
 
-    try {
-      // Verifica se existe token
-      const token = localStorage.getItem("token");
+    // =========================================
+    // VERIFICAR SESSÃO
+    // =========================================
 
-      if (!token) {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      setAlert({
+        message: "Sua sessão não foi encontrada. Faça login novamente.",
+        type: "error",
+      });
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+
+      return;
+    }
+
+    // =========================================
+    // NORMALIZAÇÃO
+    // =========================================
+
+    const name = formData.name_certificate.trim();
+
+    const institution = formData.institution_certificate.trim();
+
+    const category = formData.category_certificate.trim();
+
+    const certificationCode = formData.certification_code.trim();
+
+    const validationLink = formData.validation_link.trim();
+
+    const description = formData.description.trim();
+
+    // =========================================
+    // VALIDAÇÕES
+    // =========================================
+
+    // Nome
+    if (!name) {
+      setAlert({
+        message: "Informe o nome do certificado.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    if (name.length > 250) {
+      setAlert({
+        message: "O nome do certificado deve possuir no máximo 250 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Instituição
+    if (!institution) {
+      setAlert({
+        message: "Informe a instituição.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    if (institution.length > 250) {
+      setAlert({
+        message: "A instituição deve possuir no máximo 250 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Categoria
+    if (!category) {
+      setAlert({
+        message: "Selecione uma categoria.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Data de emissão
+    if (!formData.date_conclusion) {
+      setAlert({
+        message: "Informe a data de emissão.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const conclusionDate = new Date(`${formData.date_conclusion}T00:00:00`);
+
+    if (conclusionDate > today) {
+      setAlert({
+        message: "A data de emissão não pode ser futura.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Data de validade
+    if (formData.date_validity) {
+      const validityDate = new Date(`${formData.date_validity}T00:00:00`);
+
+      if (validityDate < conclusionDate) {
         setAlert({
-          message: "Sua sessão não foi encontrada. Faça login novamente.",
-          type: "error",
+          message:
+            "A data de validade não pode ser anterior à data de emissão.",
+          type: "warning",
         });
-
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
 
         return;
       }
+    }
 
-      // Criar FormData
+    // Carga horária
+    if (!formData.hours_certificate) {
+      setAlert({
+        message: "Informe a carga horária.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    const hours = Number(formData.hours_certificate);
+
+    if (!Number.isInteger(hours) || hours <= 0) {
+      setAlert({
+        message: "A carga horária deve ser um número inteiro maior que zero.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Código
+    if (certificationCode.length > 250) {
+      setAlert({
+        message:
+          "O código de certificação deve possuir no máximo 250 caracteres.",
+        type: "warning",
+      });
+
+      return;
+    }
+
+    // Link
+    if (validationLink) {
+      try {
+        new URL(validationLink);
+      } catch {
+        setAlert({
+          message: "Informe um link de validação válido.",
+          type: "warning",
+        });
+
+        return;
+      }
+    }
+
+    // =========================================
+    // ENVIO
+    // =========================================
+
+    setLoading(true);
+
+    try {
       const data = new FormData();
 
-      data.append("name_certificate", formData.name_certificate);
+      data.append("name_certificate", name);
 
-      data.append("institution_certificate", formData.institution_certificate);
+      data.append("institution_certificate", institution);
 
-      data.append("category_certificate", formData.category_certificate);
+      data.append("category_certificate", category);
 
       data.append("date_conclusion", formData.date_conclusion);
 
@@ -84,31 +292,32 @@ const RegisterCertificate = () => {
         data.append("date_validity", formData.date_validity);
       }
 
-      data.append("hours_certificate", formData.hours_certificate);
+      data.append("hours_certificate", hours);
 
-      if (formData.certification_code) {
-        data.append("certification_code", formData.certification_code);
+      if (certificationCode) {
+        data.append("certification_code", certificationCode);
       }
 
-      if (formData.validation_link) {
-        data.append("validation_link", formData.validation_link);
+      if (validationLink) {
+        data.append("validation_link", validationLink);
       }
 
-      if (formData.description) {
-        data.append("description", formData.description);
+      if (description) {
+        data.append("description", description);
       }
 
-      // Adicionar arquivo
       if (file) {
         data.append("file", file);
       }
 
-      // Enviar para a API
       await api.post("/certificates", data, {
         timeout: 10000,
       });
 
-      // Alert de sucesso
+      // =========================================
+      // SUCESSO
+      // =========================================
+
       setAlert({
         message: "Certificado cadastrado com sucesso!",
         type: "success",
@@ -129,7 +338,7 @@ const RegisterCertificate = () => {
 
       setFile(null);
 
-      // Redirecionar para certificados
+      // Redirecionar
       setTimeout(() => {
         navigate("/certificates");
       }, 1500);
@@ -139,7 +348,7 @@ const RegisterCertificate = () => {
         error.response?.data || error.message,
       );
 
-      // Token inválido ou expirado
+      // Sessão expirada
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
@@ -179,6 +388,9 @@ const RegisterCertificate = () => {
 
   return (
     <div className={styles.container}>
+      {/* LOADING */}
+      {loading && <Loading message="Cadastrando certificado..." />}
+
       {/* ALERT */}
       {alert && (
         <Alert
@@ -211,7 +423,9 @@ const RegisterCertificate = () => {
                 placeholder="Ex: Java Completo"
                 value={formData.name_certificate}
                 onChange={handleChange}
+                maxLength={250}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -225,7 +439,9 @@ const RegisterCertificate = () => {
                 placeholder="Ex: Rocketseat"
                 value={formData.institution_certificate}
                 onChange={handleChange}
+                maxLength={250}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -240,6 +456,7 @@ const RegisterCertificate = () => {
                   value={formData.date_conclusion}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -251,6 +468,7 @@ const RegisterCertificate = () => {
                   name="date_validity"
                   value={formData.date_validity}
                   onChange={handleChange}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -267,7 +485,9 @@ const RegisterCertificate = () => {
                   value={formData.hours_certificate}
                   onChange={handleChange}
                   min="1"
+                  step="1"
                   required
+                  disabled={loading}
                 />
               </div>
 
@@ -279,6 +499,7 @@ const RegisterCertificate = () => {
                   value={formData.category_certificate}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 >
                   <option value="">Selecione uma categoria</option>
 
@@ -303,6 +524,8 @@ const RegisterCertificate = () => {
                 placeholder="Ex: CERT-2026-001"
                 value={formData.certification_code}
                 onChange={handleChange}
+                maxLength={250}
+                disabled={loading}
               />
             </div>
 
@@ -316,6 +539,7 @@ const RegisterCertificate = () => {
                 placeholder="https://exemplo.com/validar"
                 value={formData.validation_link}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
 
@@ -329,6 +553,7 @@ const RegisterCertificate = () => {
                 value={formData.description}
                 onChange={handleChange}
                 rows="5"
+                disabled={loading}
               />
             </div>
 
@@ -340,6 +565,7 @@ const RegisterCertificate = () => {
                 type="file"
                 accept=".pdf,.png,.jpg,.jpeg"
                 onChange={handleFileChange}
+                disabled={loading}
               />
             </div>
 
