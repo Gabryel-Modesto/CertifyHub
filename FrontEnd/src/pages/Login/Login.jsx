@@ -1,25 +1,32 @@
 import styles from "./Login.module.css";
 
 import Footer from "../../components/Footer/Footer.jsx";
+import Alert from "../../components/Alert/Alert.jsx";
+import Loading from "../../components/Loading/Loading.jsx";
 
 import { Link, useNavigate } from "react-router-dom";
 
 import { useState } from "react";
 
-import axios from "axios";
+import api from "../../services/api.js";
 
 function Login() {
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState(null);
 
   const navigate = useNavigate();
 
   const handleLogin = async (event) => {
     event.preventDefault();
 
+    setAlert(null);
+    setLoading(true);
+
     try {
-      const response = await axios.post("http://localhost:3000/users/login", {
+      const response = await api.post("/users/login", {
         email,
         password,
       });
@@ -32,19 +39,50 @@ function Login() {
       // Salva o JWT
       localStorage.setItem("token", data.token);
 
-      alert(data.message);
-
+      // Limpar formulário
       setEmail("");
       setPassword("");
 
-      navigate("/dashboard");
+      // Mostrar sucesso
+      setAlert({
+        message: data.message || "Login realizado com sucesso!",
+        type: "success",
+      });
+
+      // Ir para o Dashboard
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
     } catch (error) {
-      alert(error.response?.data?.message || "Erro ao conectar com o servidor");
+      console.error(
+        "Erro ao realizar login:",
+        error.response?.data || error.message,
+      );
+
+      setAlert({
+        message:
+          error.response?.data?.message || "Erro ao conectar com o servidor.",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className={styles.container}>
+      {/* LOADING */}
+      {loading && <Loading message="Entrando..." />}
+
+      {/* ALERT */}
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
       <main className={styles.login}>
         <div className={styles.card}>
           <div className={styles.header}>
@@ -54,6 +92,7 @@ function Login() {
           </div>
 
           <form className={styles.form} onSubmit={handleLogin}>
+            {/* EMAIL */}
             <div className={styles.inputGroup}>
               <label>Email</label>
 
@@ -63,9 +102,11 @@ function Login() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
+                disabled={loading}
               />
             </div>
 
+            {/* SENHA */}
             <div className={styles.inputGroup}>
               <label>Senha</label>
 
@@ -75,6 +116,7 @@ function Login() {
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
+                disabled={loading}
               />
 
               <div className={styles.forgotPassword}>
@@ -82,7 +124,10 @@ function Login() {
               </div>
             </div>
 
-            <button type="submit">Entrar</button>
+            {/* BOTÃO */}
+            <button type="submit" disabled={loading}>
+              {loading ? "Entrando..." : "Entrar"}
+            </button>
           </form>
 
           <div className={styles.register}>

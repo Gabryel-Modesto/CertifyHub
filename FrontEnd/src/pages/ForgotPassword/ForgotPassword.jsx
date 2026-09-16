@@ -6,10 +6,11 @@ import Footer from "../../components/Footer/Footer.jsx";
 
 import { useState } from "react";
 
-import axios from "axios";
+import api from "../../services/api.js";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+
   const [loading, setLoading] = useState(false);
 
   const handleForgotPassword = async (event) => {
@@ -20,12 +21,9 @@ function ForgotPassword() {
 
       const normalizedEmail = email.trim().toLowerCase();
 
-      const response = await axios.post(
-        "http://localhost:3000/users/forgot-password",
-        {
-          email: normalizedEmail,
-        },
-      );
+      const response = await api.post("/users/forgot-password", {
+        email: normalizedEmail,
+      });
 
       alert(response.data.message);
 

@@ -1,26 +1,28 @@
 import { useState } from "react";
-import axios from "axios";
+
+import api from "../../../services/api.js";
+
+import Alert from "../../Alert/Alert.jsx";
+import Loading from "../../Loading/Loading.jsx";
+
 import styles from "./BtnChangePassword.module.css";
 
 function BtnChangePassword({ user }) {
   const [isOpen, setIsOpen] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
-
   const [newPassword, setNewPassword] = useState("");
-
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [alert, setAlert] = useState(null);
 
   const handleOpen = () => {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    setError("");
-    setSuccess("");
+    setAlert(null);
+
     setIsOpen(true);
   };
 
@@ -30,45 +32,92 @@ function BtnChangePassword({ user }) {
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    setError("");
-    setSuccess("");
+    setAlert(null);
+
     setIsOpen(false);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    setError("");
-    setSuccess("");
+    setAlert(null);
 
+    // Validar campos
     if (!currentPassword || !newPassword || !confirmPassword) {
-      setError("Preencha todos os campos.");
+      setAlert({
+        message: "Preencha todos os campos.",
+        type: "warning",
+      });
+
       return;
     }
 
+    // Verificar se as novas senhas são iguais
     if (newPassword !== confirmPassword) {
-      setError("As novas senhas não coincidem.");
+      setAlert({
+        message: "As novas senhas não coincidem.",
+        type: "error",
+      });
+
+      return;
+    }
+
+    // Verificar tamanho da senha
+    if (newPassword.length < 6) {
+      setAlert({
+        message: "A nova senha deve possuir pelo menos 6 caracteres.",
+        type: "warning",
+      });
+
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await axios.put(
-        `http://localhost:3000/users/${user.id}/password`,
-        {
-          currentPassword,
-          newPassword,
-        },
-      );
+      const response = await api.put(`/users/${user.id}/password`, {
+        currentPassword,
+        newPassword,
+      });
 
-      setSuccess(response.data.message);
-
+      // Limpar campos
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      // Alert de sucesso
+      setAlert({
+        message: response.data.message || "Senha alterada com sucesso!",
+        type: "success",
+      });
     } catch (error) {
-      setError(error.response?.data?.message || "Erro ao alterar senha.");
+      console.error(
+        "Erro ao alterar senha:",
+        error.response?.data || error.message,
+      );
+
+      // Sessão expirada
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        setAlert({
+          message: "Sua sessão expirou. Faça login novamente.",
+          type: "error",
+        });
+
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1500);
+
+        return;
+      }
+
+      // Outros erros
+      setAlert({
+        message: error.response?.data?.message || "Erro ao alterar senha.",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -76,17 +125,33 @@ function BtnChangePassword({ user }) {
 
   return (
     <>
+      {/* BOTÃO */}
       <button
         type="button"
         className={styles.passwordButton}
         onClick={handleOpen}
+        disabled={loading}
       >
         🔐 Alterar senha
       </button>
 
+      {/* LOADING */}
+      {loading && <Loading message="Alterando senha..." />}
+
+      {/* MODAL */}
       {isOpen && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
+            {/* ALERT */}
+            {alert && (
+              <Alert
+                message={alert.message}
+                type={alert.type}
+                onClose={() => setAlert(null)}
+              />
+            )}
+
+            {/* HEADER */}
             <div className={styles.modalHeader}>
               <h2>Alterar senha</h2>
 
@@ -101,6 +166,7 @@ function BtnChangePassword({ user }) {
             </div>
 
             <form onSubmit={handleSubmit}>
+              {/* SENHA ATUAL */}
               <div className={styles.formGroup}>
                 <label>Senha atual</label>
 
@@ -108,9 +174,12 @@ function BtnChangePassword({ user }) {
                   type="password"
                   value={currentPassword}
                   onChange={(event) => setCurrentPassword(event.target.value)}
+                  required
+                  disabled={loading}
                 />
               </div>
 
+              {/* NOVA SENHA */}
               <div className={styles.formGroup}>
                 <label>Nova senha</label>
 
@@ -118,9 +187,13 @@ function BtnChangePassword({ user }) {
                   type="password"
                   value={newPassword}
                   onChange={(event) => setNewPassword(event.target.value)}
+                  minLength={6}
+                  required
+                  disabled={loading}
                 />
               </div>
 
+              {/* CONFIRMAR NOVA SENHA */}
               <div className={styles.formGroup}>
                 <label>Confirmar nova senha</label>
 
@@ -128,13 +201,13 @@ function BtnChangePassword({ user }) {
                   type="password"
                   value={confirmPassword}
                   onChange={(event) => setConfirmPassword(event.target.value)}
+                  minLength={6}
+                  required
+                  disabled={loading}
                 />
               </div>
 
-              {error && <p className={styles.error}>{error}</p>}
-
-              {success && <p className={styles.success}>{success}</p>}
-
+              {/* AÇÕES */}
               <div className={styles.actions}>
                 <button
                   type="button"

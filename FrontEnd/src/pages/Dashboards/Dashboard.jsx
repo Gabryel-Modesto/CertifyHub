@@ -4,46 +4,88 @@ import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 
 import CertificateBtnDownload from "../../components/Certificate/CertificateForm/CertificateBtnDownload/CertificateBtnDownload.jsx";
 
+import Alert from "../../components/Alert/Alert.jsx";
+
 import { useNavigate } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
-import axios from "axios";
+import api from "../../services/api.js";
 
 function Dashboard() {
   const navigate = useNavigate();
 
   const [certificates, setCertificates] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  // Abrir detalhes do certificado
+  const [alert, setAlert] = useState(null);
+
+  // =========================================
+  // ABRIR DETALHES DO CERTIFICADO
+  // =========================================
+
   const handleCertificate = (id) => {
     navigate(`/certificates/${id}`);
   };
 
-  // Buscar certificados do usuário logado
+  // =========================================
+  // BUSCAR CERTIFICADOS DO USUÁRIO
+  // =========================================
+
   useEffect(() => {
     async function fetchCertificates() {
       try {
         setLoading(true);
-        setError("");
+        setAlert(null);
 
-        const loggedUser = JSON.parse(localStorage.getItem("user"));
+        const token = localStorage.getItem("token");
 
-        if (!loggedUser) {
-          navigate("/");
+        if (!token) {
+          setAlert({
+            message: "Sua sessão não foi encontrada. Faça login novamente.",
+            type: "error",
+          });
+
+          setTimeout(() => {
+            navigate("/");
+          }, 1500);
+
           return;
         }
 
-        const response = await axios.get(
-          `http://localhost:3000/certificates?id_user=${loggedUser.id}`,
-        );
+        const response = await api.get("/certificates");
 
         setCertificates(response.data);
       } catch (error) {
-        console.error(error);
+        console.error(
+          "Erro ao buscar certificados:",
+          error.response?.data || error.message,
+        );
 
-        setError("Erro ao carregar os certificados.");
+        // Token inválido ou expirado
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+
+          setAlert({
+            message: "Sua sessão expirou. Faça login novamente.",
+            type: "error",
+          });
+
+          setTimeout(() => {
+            navigate("/");
+          }, 1500);
+
+          return;
+        }
+
+        // Erro ao buscar certificados
+        setAlert({
+          message:
+            error.response?.data?.message ||
+            "Erro ao carregar os certificados.",
+          type: "error",
+        });
       } finally {
         setLoading(false);
       }
@@ -52,7 +94,10 @@ function Dashboard() {
     fetchCertificates();
   }, [navigate]);
 
-  // Indicadores do Dashboard
+  // =========================================
+  // INDICADORES DO DASHBOARD
+  // =========================================
+
   const statistics = useMemo(() => {
     const totalCertificates = certificates.length;
 
@@ -65,12 +110,11 @@ function Dashboard() {
     );
 
     const today = new Date();
-
     today.setHours(0, 0, 0, 0);
 
     const nextThirtyDays = new Date();
-
     nextThirtyDays.setHours(0, 0, 0, 0);
+
     nextThirtyDays.setDate(nextThirtyDays.getDate() + 30);
 
     const expiringCertificates = certificates.filter((certificate) => {
@@ -91,7 +135,10 @@ function Dashboard() {
     };
   }, [certificates]);
 
-  // Organizar certificados mais recentes
+  // =========================================
+  // CERTIFICADOS MAIS RECENTES
+  // =========================================
+
   const recentCertificates = useMemo(() => {
     return [...certificates]
       .sort((a, b) => {
@@ -100,8 +147,100 @@ function Dashboard() {
       .slice(0, 3);
   }, [certificates]);
 
+  // =========================================
+  // CARREGAR PREVIEWS DOS CERTIFICADOS
+  // =========================================
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPreviews = async () => {
+      const certificatesWithFiles = recentCertificates.filter(
+        (certificate) => certificate.file_path,
+      );
+
+      if (certificatesWithFiles.length === 0) {
+        setPreviewUrls({});
+        return;
+      }
+
+      const loadedPreviews = {};
+
+      for (const certificate of certificatesWithFiles) {
+        try {
+          const response = await api.get(
+            `/certificates/${certificate.id_certificate}/preview`,
+            {
+              responseType: "blob",
+            },
+          );
+
+          const url = window.URL.createObjectURL(response.data);
+
+          loadedPreviews[certificate.id_certificate] = url;
+        } catch (error) {
+          if (error.response?.status === 401) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+
+            setAlert({
+              message: "Sua sessão expirou. Faça login novamente.",
+              type: "error",
+            });
+
+            setTimeout(() => {
+              navigate("/");
+            }, 1500);
+
+            return;
+          }
+
+          console.error(
+            "Erro ao carregar preview do certificado:",
+            error.response?.data || error.message,
+          );
+        }
+      }
+
+      if (!cancelled) {
+        setPreviewUrls(loadedPreviews);
+      } else {
+        Object.values(loadedPreviews).forEach((url) => {
+          window.URL.revokeObjectURL(url);
+        });
+      }
+    };
+
+    loadPreviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [recentCertificates, navigate]);
+
+  // =========================================
+  // LIBERAR PREVIEWS
+  // =========================================
+
+  useEffect(() => {
+    return () => {
+      Object.values(previewUrls).forEach((url) => {
+        window.URL.revokeObjectURL(url);
+      });
+    };
+  }, [previewUrls]);
+
   return (
     <div className={styles.container}>
+      {/* ALERT */}
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
       <Sidebar />
 
       <main className={styles.content}>
@@ -116,6 +255,7 @@ function Dashboard() {
 
         {/* CARDS DE ESTATÍSTICAS */}
         <section className={styles.stats}>
+          {/* TOTAL DE CERTIFICADOS */}
           <div className={styles.statCard}>
             <span className={styles.icon}>📜</span>
 
@@ -126,6 +266,7 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* PRÓXIMOS DO VENCIMENTO */}
           <div className={styles.statCard}>
             <span className={styles.icon}>⏳</span>
 
@@ -136,6 +277,7 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* INSTITUIÇÕES */}
           <div className={styles.statCard}>
             <span className={styles.icon}>🏢</span>
 
@@ -146,6 +288,7 @@ function Dashboard() {
             </div>
           </div>
 
+          {/* HORAS ESTUDADAS */}
           <div className={styles.statCard}>
             <span className={styles.icon}>⏱️</span>
 
@@ -167,57 +310,70 @@ function Dashboard() {
             </button>
           </div>
 
+          {/* LOADING */}
           {loading && <p>Carregando certificados...</p>}
 
-          {!loading && error && <p>{error}</p>}
-
-          {!loading && !error && recentCertificates.length === 0 && (
+          {/* SEM CERTIFICADOS */}
+          {!loading && recentCertificates.length === 0 && (
             <p>Nenhum certificado cadastrado ainda.</p>
           )}
 
-          {!loading && !error && recentCertificates.length > 0 && (
+          {/* CERTIFICADOS */}
+          {!loading && recentCertificates.length > 0 && (
             <div className={styles.certificateGrid}>
-              {recentCertificates.map((certificate) => (
-                <div
-                  key={certificate.id_certificate}
-                  className={styles.certificateCard}
-                  onClick={() => handleCertificate(certificate.id_certificate)}
-                >
-                  {/* IMAGEM DO CERTIFICADO */}
-                  <div className={styles.certificateImage}>
-                    {certificate.file_path ? (
-                      certificate.file_path.toLowerCase().endsWith(".pdf") ? (
-                        <span>📄 PDF</span>
+              {recentCertificates.map((certificate) => {
+                const previewUrl = previewUrls[certificate.id_certificate];
+
+                const isPdf = certificate.file_path
+                  ?.toLowerCase()
+                  .endsWith(".pdf");
+
+                return (
+                  <div
+                    key={certificate.id_certificate}
+                    className={styles.certificateCard}
+                    onClick={() =>
+                      handleCertificate(certificate.id_certificate)
+                    }
+                  >
+                    {/* IMAGEM DO CERTIFICADO */}
+                    <div className={styles.certificateImage}>
+                      {certificate.file_path ? (
+                        isPdf ? (
+                          <span>📄 PDF</span>
+                        ) : previewUrl ? (
+                          <img
+                            src={previewUrl}
+                            alt={`Certificado ${certificate.name_certificate}`}
+                          />
+                        ) : (
+                          <span>Carregando...</span>
+                        )
                       ) : (
-                        <img
-                          src={`http://localhost:3000${certificate.file_path}`}
-                          alt={`Certificado ${certificate.name_certificate}`}
-                        />
-                      )
-                    ) : (
-                      <span>📜</span>
-                    )}
-                  </div>
-
-                  {/* INFORMAÇÕES */}
-                  <div className={styles.certificateInfo}>
-                    <h3>{certificate.name_certificate}</h3>
-
-                    <p>{certificate.institution_certificate}</p>
-
-                    <div className={styles.certificateDetails}>
-                      <span>{certificate.category_certificate}</span>
-
-                      <span>{certificate.hours_certificate}h</span>
+                        <span>📜</span>
+                      )}
                     </div>
 
-                    {/* BOTÃO DE DOWNLOAD */}
-                    <div className={styles.downloadContainer}>
-                      <CertificateBtnDownload certificate={certificate} />
+                    {/* INFORMAÇÕES */}
+                    <div className={styles.certificateInfo}>
+                      <h3>{certificate.name_certificate}</h3>
+
+                      <p>{certificate.institution_certificate}</p>
+
+                      <div className={styles.certificateDetails}>
+                        <span>{certificate.category_certificate}</span>
+
+                        <span>{certificate.hours_certificate}h</span>
+                      </div>
+
+                      {/* BOTÃO DE DOWNLOAD */}
+                      <div className={styles.downloadContainer}>
+                        <CertificateBtnDownload certificate={certificate} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

@@ -5,6 +5,8 @@ import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 import BtnChangePassword from "../../components/Profile/ChangePassword/BtnChangePassword.jsx";
 import BtnEditUser from "../../components/Profile/EditUser/BtnEditUser.jsx";
 
+import Loading from "../../components/Loading/Loading.jsx";
+
 import { useEffect, useState } from "react";
 
 import { useNavigate } from "react-router-dom";
@@ -13,24 +15,32 @@ function Profile() {
   const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loggedUser = JSON.parse(localStorage.getItem("user"));
 
-    if (!loggedUser) {
+    const token = localStorage.getItem("token");
+
+    if (!loggedUser || !token) {
       navigate("/");
       return;
     }
 
     setUser(loggedUser);
+    setLoading(false);
   }, [navigate]);
 
   const handleUserUpdated = (updatedUser) => {
     setUser(updatedUser);
   };
 
+  if (loading) {
+    return <Loading message="Carregando perfil..." />;
+  }
+
   if (!user) {
-    return <p>Carregando perfil...</p>;
+    return null;
   }
 
   return (

@@ -1,9 +1,9 @@
 import styles from "./RegisterCertificate.module.css";
 
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
+import Alert from "../../components/Alert/Alert.jsx";
 
 import { useState } from "react";
-
 import { useNavigate } from "react-router-dom";
 
 import api from "../../services/api.js";
@@ -24,12 +24,9 @@ const RegisterCertificate = () => {
   });
 
   const [file, setFile] = useState(null);
-
   const [loading, setLoading] = useState(false);
 
-  const [error, setError] = useState("");
-
-  const [success, setSuccess] = useState("");
+  const [alert, setAlert] = useState(null);
 
   // Alterar campos
   const handleChange = (event) => {
@@ -52,8 +49,7 @@ const RegisterCertificate = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    setError("");
-    setSuccess("");
+    setAlert(null);
     setLoading(true);
 
     try {
@@ -61,9 +57,15 @@ const RegisterCertificate = () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        alert("Sua sessão não foi encontrada. Faça login novamente.");
+        setAlert({
+          message: "Sua sessão não foi encontrada. Faça login novamente.",
+          type: "error",
+        });
 
-        navigate("/");
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+
         return;
       }
 
@@ -106,7 +108,11 @@ const RegisterCertificate = () => {
         timeout: 10000,
       });
 
-      setSuccess("Certificado cadastrado com sucesso!");
+      // Alert de sucesso
+      setAlert({
+        message: "Certificado cadastrado com sucesso!",
+        type: "success",
+      });
 
       // Limpar formulário
       setFormData({
@@ -126,28 +132,46 @@ const RegisterCertificate = () => {
       // Redirecionar para certificados
       setTimeout(() => {
         navigate("/certificates");
-      }, 1000);
+      }, 1500);
     } catch (error) {
       console.error(
         "Erro ao cadastrar certificado:",
         error.response?.data || error.message,
       );
 
+      // Token inválido ou expirado
       if (error.response?.status === 401) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
 
-        navigate("/");
+        setAlert({
+          message: "Sua sessão expirou. Faça login novamente.",
+          type: "error",
+        });
+
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+
         return;
       }
 
+      // Timeout
       if (error.code === "ECONNABORTED") {
-        setError("O servidor demorou para responder. Verifique o backend.");
-      } else {
-        setError(
-          error.response?.data?.message || "Erro ao cadastrar certificado.",
-        );
+        setAlert({
+          message: "O servidor demorou para responder. Verifique o backend.",
+          type: "error",
+        });
+
+        return;
       }
+
+      // Outros erros
+      setAlert({
+        message:
+          error.response?.data?.message || "Erro ao cadastrar certificado.",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -155,6 +179,15 @@ const RegisterCertificate = () => {
 
   return (
     <div className={styles.container}>
+      {/* ALERT */}
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
       <Sidebar />
 
       <main className={styles.content}>
@@ -312,12 +345,6 @@ const RegisterCertificate = () => {
 
             {/* ARQUIVO SELECIONADO */}
             {file && <p>Arquivo selecionado: {file.name}</p>}
-
-            {/* ERRO */}
-            {error && <p className={styles.error}>{error}</p>}
-
-            {/* SUCESSO */}
-            {success && <p className={styles.success}>{success}</p>}
 
             {/* BOTÃO */}
             <button type="submit" disabled={loading}>

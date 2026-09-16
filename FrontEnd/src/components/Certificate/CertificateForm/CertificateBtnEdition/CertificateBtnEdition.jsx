@@ -77,6 +77,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.name_certificate}
           onChange={handleChange}
           required
+          disabled={saving}
         />
       </div>
 
@@ -93,6 +94,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.institution_certificate}
           onChange={handleChange}
           required
+          disabled={saving}
         />
       </div>
 
@@ -110,6 +112,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
             value={formData.date_conclusion}
             onChange={handleChange}
             required
+            disabled={saving}
           />
         </div>
 
@@ -121,6 +124,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
             name="date_validity"
             value={formData.date_validity}
             onChange={handleChange}
+            disabled={saving}
           />
         </div>
       </div>
@@ -140,6 +144,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
             onChange={handleChange}
             min="1"
             required
+            disabled={saving}
           />
         </div>
 
@@ -151,6 +156,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
             value={formData.category_certificate}
             onChange={handleChange}
             required
+            disabled={saving}
           >
             <option value="">Selecione uma categoria</option>
 
@@ -178,6 +184,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.certification_code}
           onChange={handleChange}
           placeholder="Ex: CERT-2026-001"
+          disabled={saving}
         />
       </div>
 
@@ -194,6 +201,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           value={formData.validation_link}
           onChange={handleChange}
           placeholder="https://..."
+          disabled={saving}
         />
       </div>
 
@@ -210,6 +218,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           onChange={handleChange}
           placeholder="Descrição do certificado..."
           rows="4"
+          disabled={saving}
         />
       </div>
 
@@ -224,6 +233,7 @@ function CertificateEditForm({ certificate, onSave, onCancel, saving }) {
           type="file"
           accept=".pdf,.png,.jpg,.jpeg"
           onChange={handleFileChange}
+          disabled={saving}
         />
 
         {file && (

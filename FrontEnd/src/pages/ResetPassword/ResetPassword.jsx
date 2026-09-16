@@ -1,67 +1,105 @@
 import styles from "./ResetPassword.module.css";
+
 import Footer from "../../components/Footer/Footer.jsx";
+import Alert from "../../components/Alert/Alert.jsx";
+import Loading from "../../components/Loading/Loading.jsx";
+
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+
 import { useState } from "react";
 
-import axios from "axios";
+import api from "../../services/api.js";
 
 function ResetPassword() {
   const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
+
   const token = searchParams.get("token");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [alert, setAlert] = useState(null);
 
   const handleResetPassword = async (event) => {
     event.preventDefault();
 
-    setError("");
-    setSuccess("");
+    setAlert(null);
 
+    // Verificar token
     if (!token) {
-      setError("Token de recuperação inválido.");
+      setAlert({
+        message: "Token de recuperação inválido.",
+        type: "error",
+      });
+
       return;
     }
 
+    // Verificar campos
     if (!password || !confirmPassword) {
-      setError("Preencha todos os campos.");
+      setAlert({
+        message: "Preencha todos os campos.",
+        type: "warning",
+      });
+
       return;
     }
 
+    // Verificar senhas
     if (password !== confirmPassword) {
-      setError("As senhas não coincidem.");
+      setAlert({
+        message: "As senhas não coincidem.",
+        type: "error",
+      });
+
       return;
     }
 
+    // Verificar tamanho
     if (password.length < 6) {
-      setError("A senha deve possuir pelo menos 6 caracteres.");
+      setAlert({
+        message: "A senha deve possuir pelo menos 6 caracteres.",
+        type: "warning",
+      });
+
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await axios.post(
-        "http://localhost:3000/users/reset-password",
-        {
-          token,
-          password,
-        },
-      );
+      const response = await api.post("/users/reset-password", {
+        token,
+        password,
+      });
 
-      setSuccess(response.data.message);
-
+      // Limpar campos
       setPassword("");
       setConfirmPassword("");
 
+      // Alert de sucesso
+      setAlert({
+        message: response.data.message || "Senha redefinida com sucesso!",
+        type: "success",
+      });
+
+      // Voltar para o login
       setTimeout(() => {
         navigate("/");
-      }, 2000);
+      }, 1500);
     } catch (error) {
-      setError(error.response?.data?.message || "Erro ao redefinir senha.");
+      console.error(
+        "Erro ao redefinir senha:",
+        error.response?.data || error.message,
+      );
+
+      setAlert({
+        message: error.response?.data?.message || "Erro ao redefinir senha.",
+        type: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -69,6 +107,18 @@ function ResetPassword() {
 
   return (
     <div className={styles.container}>
+      {/* LOADING */}
+      {loading && <Loading message="Redefinindo senha..." />}
+
+      {/* ALERT */}
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
       <main className={styles.resetPassword}>
         <div className={styles.card}>
           <div className={styles.header}>
@@ -80,6 +130,7 @@ function ResetPassword() {
           </div>
 
           <form className={styles.form} onSubmit={handleResetPassword}>
+            {/* NOVA SENHA */}
             <div className={styles.inputGroup}>
               <label>Nova senha</label>
 
@@ -90,9 +141,11 @@ function ResetPassword() {
                 onChange={(event) => setPassword(event.target.value)}
                 minLength={6}
                 required
+                disabled={loading}
               />
             </div>
 
+            {/* CONFIRMAR SENHA */}
             <div className={styles.inputGroup}>
               <label>Confirmar senha</label>
 
@@ -103,13 +156,11 @@ function ResetPassword() {
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 minLength={6}
                 required
+                disabled={loading}
               />
             </div>
 
-            {error && <p className={styles.error}>{error}</p>}
-
-            {success && <p className={styles.success}>{success}</p>}
-
+            {/* BOTÃO */}
             <button type="submit" disabled={loading}>
               {loading ? "Redefinindo..." : "Redefinir senha"}
             </button>

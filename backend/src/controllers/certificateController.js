@@ -6,9 +6,17 @@ import {
   deleteCertificateByUser,
 } from "../model/certificateModel.js";
 
-// ==========================================
-// Buscar certificados do usuário
-// ==========================================
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const certificatesUploadPath = path.resolve(
+  __dirname,
+  "../../uploads/certificates",
+);
 
 async function getCertificates(req, res) {
   try {
@@ -25,10 +33,6 @@ async function getCertificates(req, res) {
     });
   }
 }
-
-// ==========================================
-// Buscar certificado por ID
-// ==========================================
 
 async function getCertificateById(req, res) {
   try {
@@ -53,10 +57,6 @@ async function getCertificateById(req, res) {
     });
   }
 }
-
-// ==========================================
-// Cadastrar certificado
-// ==========================================
 
 async function createCertificate(req, res) {
   try {
@@ -85,10 +85,6 @@ async function createCertificate(req, res) {
     });
   }
 }
-
-// ==========================================
-// Atualizar certificado
-// ==========================================
 
 async function updateCertificateController(req, res) {
   try {
@@ -129,10 +125,6 @@ async function updateCertificateController(req, res) {
   }
 }
 
-// ==========================================
-// Excluir certificado
-// ==========================================
-
 async function deleteCertificateController(req, res) {
   try {
     const { id } = req.params;
@@ -160,10 +152,98 @@ async function deleteCertificateController(req, res) {
   }
 }
 
+async function downloadCertificate(req, res) {
+  try {
+    const { id } = req.params;
+    const id_user = req.user.id;
+    const certificate = await selectCertificateByIdAndUser(id, id_user);
+
+    if (!certificate) {
+      return res.status(404).json({
+        message: "Certificado não encontrado.",
+      });
+    }
+
+    if (!certificate.file_path) {
+      return res.status(404).json({
+        message: "Este certificado não possui um arquivo.",
+      });
+    }
+
+    const fileName = path.basename(certificate.file_path);
+
+    const filePath = path.join(certificatesUploadPath, fileName);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        message: "Arquivo não encontrado.",
+      });
+    }
+
+    return res.download(
+      filePath,
+      `${certificate.name_certificate}${path.extname(filePath)}`,
+      (error) => {
+        if (error) {
+          console.error("Erro ao enviar arquivo:", error);
+        }
+      },
+    );
+  } catch (error) {
+    console.error("Erro ao baixar certificado:", error);
+
+    return res.status(500).json({
+      message: "Erro ao baixar certificado.",
+    });
+  }
+}
+
+async function previewCertificate(req, res) {
+  try {
+    const { id } = req.params;
+
+    const id_user = req.user.id;
+
+    const certificate = await selectCertificateByIdAndUser(id, id_user);
+
+    if (!certificate) {
+      return res.status(404).json({
+        message: "Certificado não encontrado.",
+      });
+    }
+
+    if (!certificate.file_path) {
+      return res.status(404).json({
+        message: "Este certificado não possui um arquivo.",
+      });
+    }
+
+    const fileName = path.basename(certificate.file_path);
+
+    const filePath = path.join(certificatesUploadPath, fileName);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        message: "Arquivo não encontrado.",
+      });
+    }
+
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error("Erro ao visualizar certificado:", error);
+
+    return res.status(500).json({
+      message: "Erro ao visualizar certificado.",
+    });
+  }
+}
+
 export {
   getCertificates,
   getCertificateById,
   createCertificate,
   updateCertificateController,
   deleteCertificateController,
+  downloadCertificate,
+  previewCertificate,
 };

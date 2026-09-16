@@ -1,47 +1,138 @@
 import styles from "./CertificateDetails.module.css";
+
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
+
 import CertificateBtnEdition from "../../components/Certificate/CertificateForm/CertificateBtnEdition/CertificateBtnEdition.jsx";
+
 import CertificateBtnDownload from "../../components/Certificate/CertificateForm/CertificateBtnDownload/CertificateBtnDownload.jsx";
+
 import CertificateBtnDelete from "../../components/Certificate/CertificateForm/CertificateBtnDelete/CertificateBtnDelete.jsx";
+
+import Alert from "../../components/Alert/Alert.jsx";
+
 import { useNavigate, useParams } from "react-router-dom";
+
 import { useEffect, useState } from "react";
-import axios from "axios";
+
+import api from "../../services/api.js";
 
 function CertificateDetails() {
   const navigate = useNavigate();
+
   const { id } = useParams();
 
   const [certificate, setCertificate] = useState(null);
 
+  const [previewUrl, setPreviewUrl] = useState(null);
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const [alert, setAlert] = useState(null);
 
   const [editing, setEditing] = useState(false);
+
   const [saving, setSaving] = useState(false);
+
+  // =========================================
+  // BUSCAR CERTIFICADO + PREVIEW
+  // =========================================
 
   useEffect(() => {
     const fetchCertificate = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3000/certificates/${id}`,
+        setLoading(true);
+        setAlert(null);
+
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          setAlert({
+            message: "Sua sessão não foi encontrada. Faça login novamente.",
+            type: "error",
+          });
+
+          setTimeout(() => {
+            navigate("/");
+          }, 1500);
+
+          return;
+        }
+
+        // Buscar dados do certificado
+        const response = await api.get(`/certificates/${id}`);
+
+        const certificateData = response.data;
+
+        setCertificate(certificateData);
+
+        // Buscar preview protegido
+        if (certificateData.file_path) {
+          const fileResponse = await api.get(`/certificates/${id}/preview`, {
+            responseType: "blob",
+          });
+
+          const url = window.URL.createObjectURL(fileResponse.data);
+
+          setPreviewUrl(url);
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao carregar certificado:",
+          error.response?.data || error.message,
         );
 
-        setCertificate(response.data);
-      } catch (error) {
-        console.error(error);
+        // Token inválido ou expirado
+        if (error.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
 
-        if (error.response?.status === 404) {
-          setError("Certificado não encontrado.");
-        } else {
-          setError("Erro ao carregar certificado.");
+          setAlert({
+            message: "Sua sessão expirou. Faça login novamente.",
+            type: "error",
+          });
+
+          setTimeout(() => {
+            navigate("/");
+          }, 1500);
+
+          return;
         }
+
+        // Certificado não encontrado
+        if (error.response?.status === 404) {
+          setAlert({
+            message: "Certificado não encontrado.",
+            type: "error",
+          });
+
+          return;
+        }
+
+        // Outros erros
+        setAlert({
+          message:
+            error.response?.data?.message || "Erro ao carregar certificado.",
+          type: "error",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchCertificate();
-  }, [id]);
+  }, [id, navigate]);
+
+  // =========================================
+  // LIBERAR PREVIEW
+  // =========================================
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        window.URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   // =========================================
   // ATIVAR EDIÇÃO
@@ -49,7 +140,7 @@ function CertificateDetails() {
 
   const handleEdit = () => {
     setEditing(true);
-    setError("");
+    setAlert(null);
   };
 
   // =========================================
@@ -58,7 +149,7 @@ function CertificateDetails() {
 
   const handleCancelEdit = () => {
     setEditing(false);
-    setError("");
+    setAlert(null);
   };
 
   // =========================================
@@ -67,7 +158,7 @@ function CertificateDetails() {
 
   const handleSave = async (formData, file) => {
     setSaving(true);
-    setError("");
+    setAlert(null);
 
     try {
       const data = new FormData();
@@ -98,26 +189,68 @@ function CertificateDetails() {
         data.append("description", formData.description);
       }
 
-      // Só envia arquivo se o usuário
-      // escolher um novo arquivo
+      // Só envia arquivo se escolher um novo
       if (file) {
         data.append("file", file);
       }
 
-      const response = await axios.put(
-        `http://localhost:3000/certificates/${id}`,
-        data,
-      );
+      const response = await api.put(`/certificates/${id}`, data);
 
       setCertificate(response.data.certificate);
 
       setEditing(false);
-    } catch (error) {
-      console.error(error);
 
-      setError(
-        error.response?.data?.message || "Erro ao atualizar certificado.",
+      // Se houve novo arquivo, atualiza o preview
+      if (file) {
+        const fileResponse = await api.get(`/certificates/${id}/preview`, {
+          responseType: "blob",
+        });
+
+        const url = window.URL.createObjectURL(fileResponse.data);
+
+        setPreviewUrl((oldUrl) => {
+          if (oldUrl) {
+            window.URL.revokeObjectURL(oldUrl);
+          }
+
+          return url;
+        });
+      }
+
+      // Alert de sucesso
+      setAlert({
+        message: "Certificado atualizado com sucesso!",
+        type: "success",
+      });
+    } catch (error) {
+      console.error(
+        "Erro ao atualizar certificado:",
+        error.response?.data || error.message,
       );
+
+      // Token inválido ou expirado
+      if (error.response?.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        setAlert({
+          message: "Sua sessão expirou. Faça login novamente.",
+          type: "error",
+        });
+
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+
+        return;
+      }
+
+      // Outros erros
+      setAlert({
+        message:
+          error.response?.data?.message || "Erro ao atualizar certificado.",
+        type: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -148,16 +281,24 @@ function CertificateDetails() {
   }
 
   // =========================================
-  // ERRO
+  // CERTIFICADO NÃO ENCONTRADO
   // =========================================
 
-  if (error && !certificate) {
+  if (!certificate) {
     return (
       <div className={styles.container}>
         <Sidebar />
 
         <main className={styles.content}>
-          <h1>{error}</h1>
+          {alert && (
+            <Alert
+              message={alert.message}
+              type={alert.type}
+              onClose={() => setAlert(null)}
+            />
+          )}
+
+          <h1>Certificado não encontrado.</h1>
 
           <button className={styles.backButton} onClick={handleBack}>
             ← Voltar para certificados
@@ -173,35 +314,33 @@ function CertificateDetails() {
 
   return (
     <div className={styles.container}>
+      {/* ALERT */}
+      {alert && (
+        <Alert
+          message={alert.message}
+          type={alert.type}
+          onClose={() => setAlert(null)}
+        />
+      )}
+
       <Sidebar />
 
       <main className={styles.content}>
         {/* VOLTAR */}
-
         <button className={styles.backButton} onClick={handleBack}>
           ← Voltar para certificados
         </button>
 
         {/* HEADER */}
-
         <div className={styles.header}>
           <h1>{certificate.name_certificate}</h1>
 
           <p>{certificate.institution_certificate}</p>
         </div>
 
-        {/* ERRO */}
-
-        {error && <p>{error}</p>}
-
         {/* CARD */}
-
         <div className={styles.card}>
           {editing ? (
-            // =========================================
-            // COMPONENTE DE EDIÇÃO
-            // =========================================
-
             <CertificateBtnEdition
               certificate={certificate}
               onSave={handleSave}
@@ -209,26 +348,18 @@ function CertificateDetails() {
               saving={saving}
             />
           ) : (
-            // =========================================
-            // MODO VISUALIZAÇÃO
-            // =========================================
-
             <>
               {/* PREVIEW */}
-
               <div className={styles.certificatePreview}>
-                {certificate.file_path ? (
+                {certificate.file_path && previewUrl ? (
                   certificate.file_path.toLowerCase().endsWith(".pdf") ? (
                     <iframe
-                      src={`http://localhost:3000${certificate.file_path}`}
+                      src={previewUrl}
                       title={certificate.name_certificate}
                       className={styles.pdfPreview}
                     />
                   ) : (
-                    <img
-                      src={`http://localhost:3000${certificate.file_path}`}
-                      alt={certificate.name_certificate}
-                    />
+                    <img src={previewUrl} alt={certificate.name_certificate} />
                   )
                 ) : (
                   <div className={styles.placeholder}>
@@ -240,7 +371,6 @@ function CertificateDetails() {
               </div>
 
               {/* INFORMAÇÕES */}
-
               <div className={styles.info}>
                 <div className={styles.infoItem}>
                   <span>Instituição</span>
@@ -306,11 +436,14 @@ function CertificateDetails() {
               </div>
 
               {/* AÇÕES */}
-
               <div className={styles.actions}>
                 <CertificateBtnDownload certificate={certificate} />
 
-                <button className={styles.editButton} onClick={handleEdit}>
+                <button
+                  className={styles.editButton}
+                  onClick={handleEdit}
+                  disabled={saving}
+                >
                   ✏️ Editar
                 </button>
 

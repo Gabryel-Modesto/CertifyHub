@@ -1,0 +1,96 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  z-index: 9998;
+}
+
+.modal {
+  width: min(90%, 420px);
+
+  padding: 30px;
+
+  background: white;
+  border-radius: 14px;
+
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+
+  text-align: center;
+
+  animation: showModal 0.2s ease;
+}
+
+.icon {
+  font-size: 38px;
+  margin-bottom: 10px;
+}
+
+.modal h2 {
+  margin: 0 0 10px;
+  font-size: 22px;
+}
+
+.modal p {
+  margin: 0;
+
+  color: #666;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+
+  margin-top: 25px;
+}
+
+.actions button {
+  min-width: 110px;
+
+  padding: 11px 18px;
+
+  border: none;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.cancelButton {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cancelButton:hover {
+  background: #d1d5db;
+}
+
+.confirmButton {
+  background: #dc2626;
+  color: white;
+}
+
+.confirmButton:hover {
+  background: #b91c1c;
+}
+
+@keyframes showModal {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

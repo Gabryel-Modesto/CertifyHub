@@ -1,9 +1,15 @@
-import styles from './Loading.module.css'
+import styles from "./Loading.module.css";
 
-const Loading = () => {
+const Loading = ({ message = "Carregando..." }) => {
   return (
-    <div>Loading</div>
-  )
-}
+    <div className={styles.overlay}>
+      <div className={styles.loading}>
+        <div className={styles.spinner}></div>
 
-export default Loading
+        <span>{message}</span>
+      </div>
+    </div>
+  );
+};
+
+export default Loading;

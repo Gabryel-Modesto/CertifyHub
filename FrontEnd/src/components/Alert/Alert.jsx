@@ -1,9 +1,17 @@
-import styles from './Alert.module.css'
+import styles from "./Alert.module.css";
 
-const Alert = () => {
+const Alert = ({ message, type = "info", onClose }) => {
   return (
-    <div>Alert</div>
-  )
-}
+    <div className={`${styles.alert} ${styles[type]}`}>
+      <span className={styles.message}>{message}</span>
 
-export default Alert
+      {onClose && (
+        <button className={styles.close} onClick={onClose} type="button">
+          ×
+        </button>
+      )}
+    </div>
+  );
+};
+
+export default Alert;
