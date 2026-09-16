@@ -74,5 +74,3 @@ São suportados:
 - PNG
 - JPG
 - JPEG
-
-Os arquivos são armazenados no diretório:
