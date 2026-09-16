@@ -1,78 +1,89 @@
 import styles from "./Profile.module.css";
+
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 
+import BtnChangePassword from "../../components/Profile/ChangePassword/BtnChangePassword.jsx";
+import BtnEditUser from "../../components/Profile/EditUser/BtnEditUser.jsx";
+
+import { useEffect, useState } from "react";
+
+import { useNavigate } from "react-router-dom";
+
 function Profile() {
-  const user = {
-    name: "Gabryel Souza",
-    email: "gabryel@email.com",
+  const navigate = useNavigate();
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loggedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (!loggedUser) {
+      navigate("/");
+      return;
+    }
+
+    setUser(loggedUser);
+  }, [navigate]);
+
+  const handleUserUpdated = (updatedUser) => {
+    setUser(updatedUser);
   };
 
-  const handleEdit = () => {
-    console.log("Editar perfil");
-  };
-
-  const handleChangePassword = () => {
-    console.log("Alterar senha");
-  };
+  if (!user) {
+    return <p>Carregando perfil...</p>;
+  }
 
   return (
     <div className={styles.container}>
       <Sidebar />
 
       <main className={styles.content}>
-        {/* HEADER */}
-
+        {/* CABEÇALHO */}
         <div className={styles.header}>
-          <h1>Meu Perfil</h1>
-          <p>Gerencie suas informações pessoais e sua conta.</p>
+          <h1>Meu perfil</h1>
+
+          <p>Visualize e gerencie seus dados pessoais.</p>
         </div>
 
-        {/* PERFIL */}
-
+        {/* CARD DO PERFIL */}
         <div className={styles.card}>
           <div className={styles.profileHeader}>
             <div className={styles.avatar}>
-              <span>👤</span>
+              {user.name?.charAt(0).toUpperCase()}
             </div>
 
-            <div className={styles.profileName}>
-              <h2>{user.name}</h2>
+            <div>
+              <h2 className={styles.profileName}>{user.name}</h2>
+
               <p>{user.email}</p>
             </div>
           </div>
 
-          {/* INFORMAÇÕES */}
-
-          <div className={styles.section}>
+          {/* INFORMAÇÕES PESSOAIS */}
+          <section className={styles.section}>
             <h3>Informações pessoais</h3>
 
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
                 <span>Nome</span>
+
                 <strong>{user.name}</strong>
               </div>
 
               <div className={styles.infoItem}>
                 <span>E-mail</span>
+
                 <strong>{user.email}</strong>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* AÇÕES */}
+          <section className={styles.actions}>
+            <BtnEditUser user={user} onUserUpdated={handleUserUpdated} />
 
-          <div className={styles.actions}>
-            <button className={styles.editButton} onClick={handleEdit}>
-              ✏️ Editar perfil
-            </button>
-
-            <button
-              className={styles.passwordButton}
-              onClick={handleChangePassword}
-            >
-              🔒 Alterar senha
-            </button>
-          </div>
+            <BtnChangePassword user={user} />
+          </section>
         </div>
       </main>
     </div>

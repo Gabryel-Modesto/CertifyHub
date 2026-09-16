@@ -7,9 +7,11 @@
 .content {
   flex: 1;
   padding: 30px 40px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
+
   min-width: 0;
 }
 
@@ -23,12 +25,14 @@
 
 .header h1 {
   margin: 0 0 5px;
+
   color: #1f2937;
   font-size: 28px;
 }
 
 .header p {
   margin: 0;
+
   color: #6b7280;
 }
 
@@ -37,10 +41,15 @@
 .card {
   width: 100%;
   max-width: 800px;
+
   background-color: white;
+
   padding: 30px;
+
   border-radius: 12px;
+
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+
   box-sizing: border-box;
 }
 
@@ -49,19 +58,26 @@
 .profileHeader {
   display: flex;
   align-items: center;
+
   gap: 20px;
+
   padding-bottom: 25px;
+
   border-bottom: 1px solid #e5e7eb;
 }
 
 .avatar {
   width: 80px;
   height: 80px;
+
   border-radius: 50%;
+
   background-color: #eff6ff;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   flex-shrink: 0;
 }
 
@@ -75,14 +91,18 @@
 
 .profileName h2 {
   margin: 0 0 5px;
+
   color: #1f2937;
   font-size: 22px;
+
   overflow-wrap: break-word;
 }
 
 .profileName p {
   margin: 0;
+
   color: #6b7280;
+
   overflow-wrap: break-word;
 }
 
@@ -94,31 +114,39 @@
 
 .section h3 {
   margin: 0 0 20px;
+
   color: #1f2937;
   font-size: 18px;
 }
 
 .infoGrid {
   display: grid;
+
   grid-template-columns: repeat(2, 1fr);
+
   gap: 20px;
 }
 
 .infoItem {
   display: flex;
   flex-direction: column;
+
   gap: 5px;
+
   min-width: 0;
 }
 
 .infoItem span {
   color: #6b7280;
+
   font-size: 13px;
 }
 
 .infoItem strong {
   color: #1f2937;
+
   font-size: 15px;
+
   overflow-wrap: break-word;
 }
 
@@ -126,41 +154,14 @@
 
 .actions {
   display: flex;
+  align-items: center;
+
   gap: 12px;
-  padding-top: 25px;
+
+  margin-top: 28px;
+  padding-top: 24px;
+
   border-top: 1px solid #e5e7eb;
-}
-
-.actions button {
-  padding: 11px 18px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-/* EDITAR */
-
-.editButton {
-  background-color: #2563eb;
-  color: white;
-}
-
-.editButton:hover {
-  background-color: #1d4ed8;
-}
-
-/* ALTERAR SENHA */
-
-.passwordButton {
-  background-color: #f3f4f6;
-  color: #374151;
-}
-
-.passwordButton:hover {
-  background-color: #e5e7eb;
 }
 
 /* =========================================
@@ -212,6 +213,7 @@
 
   .profileHeader {
     gap: 15px;
+
     padding-bottom: 20px;
   }
 
@@ -240,11 +242,13 @@
 
   .section h3 {
     font-size: 17px;
+
     margin-bottom: 18px;
   }
 
   .infoGrid {
     grid-template-columns: 1fr;
+
     gap: 15px;
   }
 
@@ -260,13 +264,10 @@
 
   .actions {
     flex-direction: column;
-    gap: 10px;
-    padding-top: 20px;
-  }
 
-  .actions button {
-    width: 100%;
-    padding: 12px;
+    gap: 10px;
+
+    padding-top: 20px;
   }
 }
 

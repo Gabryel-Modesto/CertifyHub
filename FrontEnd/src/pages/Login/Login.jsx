@@ -8,7 +8,6 @@ import { useState } from "react";
 
 function Login() {
   const [email, setEmail] = useState("");
-
   const [password, setPassword] = useState("");
 
   const navigate = useNavigate();
@@ -34,20 +33,20 @@ function Login() {
 
       if (!response.ok) {
         alert(data.message);
-
         return;
       }
 
+      // Salva os dados do usuário logado
+      localStorage.setItem("user", JSON.stringify(data.user));
+
       alert(data.message);
 
-      // Limpa os campos
       setEmail("");
       setPassword("");
 
-      // Vai para o Dashboard
       navigate("/dashboard");
     } catch (error) {
-      console.error(error);
+      console.error("Erro no login:", error);
 
       alert("Erro ao conectar com o servidor");
     }
@@ -59,7 +58,6 @@ function Login() {
         <div className={styles.card}>
           <div className={styles.header}>
             <h1>CertifyHub</h1>
-
             <h2>Acesse sua conta</h2>
           </div>
 
@@ -72,6 +70,7 @@ function Login() {
                 placeholder="Informe seu email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
+                required
               />
             </div>
 
@@ -83,6 +82,7 @@ function Login() {
                 placeholder="Informe sua senha"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                required
               />
 
               <div className={styles.forgotPassword}>

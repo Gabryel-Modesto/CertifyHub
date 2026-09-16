@@ -1,18 +1,27 @@
 import {
-  selectCertificates,
+  selectCertificatesByUser,
   selectCertificateById,
   insertCertificate,
   updateCertificate,
   deleteCertificate,
 } from "../model/certificateModel.js";
 
+// Buscar certificados do usuário
 async function getCertificates(req, res) {
   try {
-    const certificates = await selectCertificates();
+    const { id_user } = req.query;
+
+    if (!id_user) {
+      return res.status(400).json({
+        message: "Usuário não informado.",
+      });
+    }
+
+    const certificates = await selectCertificatesByUser(id_user);
 
     res.status(200).json(certificates);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar certificados:", error);
 
     res.status(500).json({
       message: "Erro ao buscar certificados.",
@@ -20,6 +29,7 @@ async function getCertificates(req, res) {
   }
 }
 
+// Buscar certificado por ID
 async function getCertificateById(req, res) {
   try {
     const { id } = req.params;
@@ -34,7 +44,7 @@ async function getCertificateById(req, res) {
 
     res.status(200).json(certificate);
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao buscar certificado:", error);
 
     res.status(500).json({
       message: "Erro ao buscar certificado.",
@@ -42,34 +52,49 @@ async function getCertificateById(req, res) {
   }
 }
 
+// Cadastrar certificado
 async function createCertificate(req, res) {
   try {
     const certificateData = {
       ...req.body,
-
       file_path: req.file ? `/uploads/certificates/${req.file.filename}` : null,
     };
 
+    if (!certificateData.id_user) {
+      return res.status(400).json({
+        message: "Usuário não informado.",
+      });
+    }
+
     const certificate = await insertCertificate(certificateData);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Certificado cadastrado com sucesso.",
       certificate,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao cadastrar certificado:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Erro ao cadastrar certificado.",
     });
   }
 }
 
+// Atualizar certificado
 async function updateCertificateController(req, res) {
   try {
     const { id } = req.params;
 
-    const certificate = await updateCertificate(id, req.body);
+    const certificateData = {
+      ...req.body,
+
+      file_path: req.file
+        ? `/uploads/certificates/${req.file.filename}`
+        : req.body.file_path || null,
+    };
+
+    const certificate = await updateCertificate(id, certificateData);
 
     if (!certificate) {
       return res.status(404).json({
@@ -82,7 +107,7 @@ async function updateCertificateController(req, res) {
       certificate,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao atualizar certificado:", error);
 
     res.status(500).json({
       message: "Erro ao atualizar certificado.",
@@ -90,6 +115,7 @@ async function updateCertificateController(req, res) {
   }
 }
 
+// Excluir certificado
 async function deleteCertificateController(req, res) {
   try {
     const { id } = req.params;
@@ -107,7 +133,7 @@ async function deleteCertificateController(req, res) {
       certificate,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Erro ao excluir certificado:", error);
 
     res.status(500).json({
       message: "Erro ao excluir certificado.",

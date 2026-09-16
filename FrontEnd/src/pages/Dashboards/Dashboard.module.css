@@ -7,9 +7,12 @@
 .content {
   flex: 1;
   padding: 40px;
+  min-width: 0;
 }
 
-/* Cabeçalho */
+/* =========================================
+   CABEÇALHO
+========================================= */
 
 .header {
   margin-bottom: 35px;
@@ -25,11 +28,13 @@
   color: #6b7280;
 }
 
-/* Cards de estatísticas */
+/* =========================================
+   CARDS DE ESTATÍSTICAS
+========================================= */
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
   margin-bottom: 40px;
 }
@@ -38,11 +43,9 @@
   background-color: white;
   padding: 25px;
   border-radius: 12px;
-
   display: flex;
   align-items: center;
   gap: 18px;
-
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
@@ -61,7 +64,9 @@
   color: #1f2937;
 }
 
-/* Certificados recentes */
+/* =========================================
+   CERTIFICADOS RECENTES
+========================================= */
 
 .recent {
   width: 100%;
@@ -71,7 +76,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   margin-bottom: 20px;
 }
 
@@ -83,12 +87,9 @@
 .recentHeader button {
   background: none;
   border: none;
-
   color: #2563eb;
-
   font-size: 14px;
   font-weight: 600;
-
   cursor: pointer;
 }
 
@@ -96,27 +97,25 @@
   text-decoration: underline;
 }
 
-/* Grid dos certificados */
+/* =========================================
+   GRID DOS CERTIFICADOS
+========================================= */
 
 .certificateGrid {
   display: grid;
-
   grid-template-columns: repeat(3, 1fr);
-
   gap: 20px;
 }
 
-/* Card do certificado */
+/* =========================================
+   CARD DO CERTIFICADO
+========================================= */
 
 .certificateCard {
   background-color: white;
-
   border-radius: 12px;
-
   overflow: hidden;
-
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-
   transition:
     transform 0.2s,
     box-shadow 0.2s;
@@ -124,79 +123,93 @@
 
 .certificateCard:hover {
   transform: translateY(-5px);
-
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-
   cursor: pointer;
 }
 
-/* Área da imagem */
+/* =========================================
+   IMAGEM DO CERTIFICADO
+========================================= */
 
 .certificateImage {
-  height: 180px;
-
+  height: 200px;
   background-color: #f3f4f6;
-
   display: flex;
-
   align-items: center;
-
   justify-content: center;
+  overflow: hidden;
+}
+
+.certificateImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .certificateImage span {
-  font-size: 50px;
+  font-size: 32px;
+  color: #6b7280;
 }
 
-/* Informações */
+/* =========================================
+   INFORMAÇÕES
+========================================= */
 
 .certificateInfo {
-  padding: 20px;
+  padding: 25px;
 }
 
 .certificateInfo h3 {
   margin: 0 0 8px;
-
   color: #1f2937;
 }
 
 .certificateInfo p {
-  margin: 0 0 15px;
-
+  margin: 0 0 18px;
   color: #6b7280;
-
   font-size: 14px;
 }
 
-/* Categoria e carga horária */
+/* =========================================
+   CATEGORIA E CARGA HORÁRIA
+========================================= */
 
 .certificateDetails {
   display: flex;
-
   justify-content: space-between;
-
   align-items: center;
-
   gap: 10px;
 }
 
 .certificateDetails span {
   background-color: #eff6ff;
-
   color: #2563eb;
-
   padding: 5px 10px;
-
   border-radius: 20px;
-
   font-size: 12px;
-
   white-space: nowrap;
 }
 
-/* Responsividade */
+/* =========================================
+   BOTÃO DE DOWNLOAD
+========================================= */
 
-@media (max-width: 1000px) {
+.downloadContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* =========================================
+   RESPONSIVIDADE
+========================================= */
+
+@media (max-width: 1200px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .certificateGrid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -213,5 +226,11 @@
 
   .certificateGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 400px) {
+  .content {
+    padding: 20px 15px;
   }
 }

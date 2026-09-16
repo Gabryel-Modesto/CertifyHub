@@ -6,43 +6,37 @@ import Footer from "../../components/Footer/Footer.jsx";
 
 import { useState } from "react";
 
+import axios from "axios";
+
 function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleForgotPassword = async (event) => {
     event.preventDefault();
 
     try {
-      const response = await fetch(
+      setLoading(true);
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      const response = await axios.post(
         "http://localhost:3000/users/forgot-password",
         {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-          },
-
-          body: JSON.stringify({
-            email,
-          }),
+          email: normalizedEmail,
         },
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message);
-
-        return;
-      }
-
-      alert(data.message);
+      alert(response.data.message);
 
       setEmail("");
     } catch (error) {
-      console.error(error);
-
-      alert("Erro ao conectar com o servidor");
+      alert(
+        error.response?.data?.message ||
+          "Erro ao solicitar recuperação de senha.",
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -71,7 +65,9 @@ function ForgotPassword() {
               />
             </div>
 
-            <button type="submit">Enviar link de recuperação</button>
+            <button type="submit" disabled={loading}>
+              {loading ? "Enviando..." : "Enviar link de recuperação"}
+            </button>
           </form>
 
           <div className={styles.loginLink}>

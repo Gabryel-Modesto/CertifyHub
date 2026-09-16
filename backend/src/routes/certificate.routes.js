@@ -5,7 +5,7 @@ import {
   getCertificateById,
   createCertificate,
   updateCertificateController,
-  deleteCertificateController
+  deleteCertificateController,
 } from "../controllers/certificateController.js";
 
 import upload from "../middlewares/upload.js";
@@ -16,9 +16,9 @@ router.get("/", getCertificates);
 
 router.get("/:id", getCertificateById);
 
-router.post("/",upload.single("file"),createCertificate);
+router.post("/", upload.single("file"), createCertificate);
 
-router.put("/:id", updateCertificateController);
+router.put("/:id", upload.single("file"), updateCertificateController);
 
 router.delete("/:id", deleteCertificateController);
 

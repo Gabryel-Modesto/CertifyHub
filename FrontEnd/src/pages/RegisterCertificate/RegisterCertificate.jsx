@@ -1,8 +1,10 @@
 import styles from "./RegisterCertificate.module.css";
+
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import axios from "axios";
 
 const RegisterCertificate = () => {
@@ -21,7 +23,6 @@ const RegisterCertificate = () => {
   });
 
   const [file, setFile] = useState(null);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -30,10 +31,10 @@ const RegisterCertificate = () => {
   const handleChange = (event) => {
     const { name, value } = event.target;
 
-    setFormData({
-      ...formData,
+    setFormData((previousData) => ({
+      ...previousData,
       [name]: value,
-    });
+    }));
   };
 
   // Selecionar arquivo
@@ -52,16 +53,22 @@ const RegisterCertificate = () => {
     setLoading(true);
 
     try {
+      const loggedUser = JSON.parse(localStorage.getItem("user"));
+      if (!loggedUser || !loggedUser.id) {
+        alert("Usuário não encontrado. Faça login novamente.");
+
+        navigate("/");
+        return;
+      }
+
+      // Criar FormData
       const data = new FormData();
 
-      data.append("id_user", 1);
-
+      // Usuário responsável pelo certificado
+      data.append("id_user", String(loggedUser.id));
       data.append("name_certificate", formData.name_certificate);
-
       data.append("institution_certificate", formData.institution_certificate);
-
       data.append("category_certificate", formData.category_certificate);
-
       data.append("date_conclusion", formData.date_conclusion);
 
       if (formData.date_validity) {
@@ -82,20 +89,23 @@ const RegisterCertificate = () => {
         data.append("description", formData.description);
       }
 
-      // Adiciona o arquivo
+      // Adicionar arquivo
       if (file) {
         data.append("file", file);
       }
 
+      // Enviar para a API
       const response = await axios.post(
         "http://localhost:3000/certificates",
         data,
+        {
+          timeout: 10000,
+        },
       );
-
-      console.log(response.data);
-
+      
       setSuccess("Certificado cadastrado com sucesso!");
 
+      // Limpar formulário
       setFormData({
         name_certificate: "",
         institution_certificate: "",
@@ -110,13 +120,23 @@ const RegisterCertificate = () => {
 
       setFile(null);
 
+      // Redirecionar para certificados
       setTimeout(() => {
         navigate("/certificates");
       }, 1000);
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Erro ao cadastrar certificado:",
+        error.response?.data || error.message,
+      );
 
-      setError("Erro ao cadastrar certificado.");
+      if (error.code === "ECONNABORTED") {
+        setError("O servidor demorou para responder. Verifique o backend.");
+      } else {
+        setError(
+          error.response?.data?.message || "Erro ao cadastrar certificado.",
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -191,7 +211,7 @@ const RegisterCertificate = () => {
               </div>
             </div>
 
-            {/* CARGA + CATEGORIA */}
+            {/* CARGA HORÁRIA + CATEGORIA */}
             <div className={styles.row}>
               <div className={styles.inputGroup}>
                 <label>Carga horária</label>
@@ -283,10 +303,10 @@ const RegisterCertificate = () => {
             {file && <p>Arquivo selecionado: {file.name}</p>}
 
             {/* ERRO */}
-            {error && <p>{error}</p>}
+            {error && <p className={styles.error}>{error}</p>}
 
             {/* SUCESSO */}
-            {success && <p>{success}</p>}
+            {success && <p className={styles.success}>{success}</p>}
 
             {/* BOTÃO */}
             <button type="submit" disabled={loading}>

@@ -6,6 +6,13 @@ function Sidebar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    const confirmed = window.confirm("Tem certeza que deseja sair do sistema?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    localStorage.removeItem("user");
     navigate("/");
   };
 
@@ -16,7 +23,6 @@ function Sidebar() {
       </div>
 
       {/* MENU PRINCIPAL */}
-
       <nav className={styles.menu}>
         <Link to="/dashboard">
           <span>🏠</span>
@@ -30,7 +36,6 @@ function Sidebar() {
       </nav>
 
       {/* MENU INFERIOR */}
-
       <div className={styles.bottomMenu}>
         <button onClick={() => navigate("/profile")}>
           <span>👤</span>

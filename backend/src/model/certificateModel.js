@@ -1,5 +1,6 @@
 import { connect } from "../config/database.js";
 
+// Buscar todos os certificados
 async function selectCertificates() {
   const client = await connect();
 
@@ -16,6 +17,28 @@ async function selectCertificates() {
   }
 }
 
+// Buscar certificados de um usuário
+async function selectCertificatesByUser(id_user) {
+  const client = await connect();
+
+  try {
+    const result = await client.query(
+      `
+      SELECT *
+      FROM certificates
+      WHERE id_user = $1
+      ORDER BY id_certificate DESC
+      `,
+      [id_user],
+    );
+
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+// Buscar certificado por ID
 async function selectCertificateById(id) {
   const client = await connect();
 
@@ -35,6 +58,7 @@ async function selectCertificateById(id) {
   }
 }
 
+// Inserir certificado
 async function insertCertificate(certificate) {
   const client = await connect();
 
@@ -68,7 +92,10 @@ async function insertCertificate(certificate) {
         description,
         file_path
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      VALUES (
+        $1, $2, $3, $4, $5,
+        $6, $7, $8, $9, $10, $11
+      )
       RETURNING *
       `,
       [
@@ -77,12 +104,12 @@ async function insertCertificate(certificate) {
         institution_certificate,
         category_certificate,
         date_conclusion,
-        date_validity,
+        date_validity || null,
         hours_certificate,
-        certification_code,
-        validation_link,
-        description,
-        file_path,
+        certification_code || null,
+        validation_link || null,
+        description || null,
+        file_path || null,
       ],
     );
 
@@ -92,6 +119,7 @@ async function insertCertificate(certificate) {
   }
 }
 
+// Atualizar certificado
 async function updateCertificate(id, certificate) {
   const client = await connect();
 
@@ -131,12 +159,12 @@ async function updateCertificate(id, certificate) {
         institution_certificate,
         category_certificate,
         date_conclusion,
-        date_validity,
+        date_validity || null,
         hours_certificate,
-        certification_code,
-        validation_link,
-        description,
-        file_path,
+        certification_code || null,
+        validation_link || null,
+        description || null,
+        file_path || null,
         id,
       ],
     );
@@ -147,6 +175,7 @@ async function updateCertificate(id, certificate) {
   }
 }
 
+// Excluir certificado
 async function deleteCertificate(id) {
   const client = await connect();
 
@@ -168,6 +197,7 @@ async function deleteCertificate(id) {
 
 export {
   selectCertificates,
+  selectCertificatesByUser,
   selectCertificateById,
   insertCertificate,
   updateCertificate,

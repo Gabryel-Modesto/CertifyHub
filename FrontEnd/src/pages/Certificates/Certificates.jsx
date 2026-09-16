@@ -1,29 +1,60 @@
 import styles from "./Certificates.module.css";
+
 import Sidebar from "../../components/Sidebar/Sidebar.jsx";
+
 import CertificateCard from "../../components/Certificate/CertificateCard/CertificateCard.jsx";
+
 import CertificateFilters from "../../components/Certificate/CertificateFilters/CertificateFilters.jsx";
+
 import CertificateHeader from "../../components/Certificate/CertificateHeader/CertificateHeader.jsx";
+
 import CertificateEmptyState from "../../components/Certificate/CertificateEmptyState/CertificateEmptyState.jsx";
+
 import { useNavigate } from "react-router-dom";
+
 import { useEffect, useState } from "react";
+
 import axios from "axios";
+
 function Certificates() {
   const navigate = useNavigate();
+
   const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [sort, setSort] = useState("recentes");
 
+  // Buscar certificados do usuário logado
   useEffect(() => {
     const fetchCertificates = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/certificates");
+        setLoading(true);
+        setError("");
 
-        setCertificates(response.data);
+        const loggedUser = JSON.parse(localStorage.getItem("user"));
+
+        if (!loggedUser || !loggedUser.id) {
+          navigate("/");
+          return;
+        }
+
+        const response = await axios.get(
+          `http://localhost:3000/certificates?id_user=${loggedUser.id}`,
+        );
+
+        const certificatesData = Array.isArray(response.data)
+          ? response.data
+          : response.data.certificates || [];
+
+        setCertificates(certificatesData);
       } catch (error) {
-        console.error(error);
+        console.error(
+          "Erro ao buscar certificados:",
+          error.response?.data || error.message,
+        );
 
         setError("Erro ao carregar certificados.");
       } finally {
@@ -32,26 +63,36 @@ function Certificates() {
     };
 
     fetchCertificates();
-  }, []);
+  }, [navigate]);
 
+  // Abrir detalhes do certificado
   const handleCertificate = (id) => {
     navigate(`/certificates/${id}`);
   };
 
+  // Abrir tela de cadastro
   const handleRegister = () => {
     navigate("/registerCertificate");
   };
 
+  // Filtrar e ordenar certificados
   const filteredCertificates = certificates
     .filter((certificate) => {
       const searchText = search.toLowerCase();
 
+      const certificateName = (
+        certificate.name_certificate || ""
+      ).toLowerCase();
+
+      const institutionName = (
+        certificate.institution_certificate || ""
+      ).toLowerCase();
+
       return (
-        certificate.name_certificate.toLowerCase().includes(searchText) ||
-        certificate.institution_certificate.toLowerCase().includes(searchText)
+        certificateName.includes(searchText) ||
+        institutionName.includes(searchText)
       );
     })
-
     .filter((certificate) => {
       if (category === "Todas") {
         return true;
@@ -59,7 +100,6 @@ function Certificates() {
 
       return certificate.category_certificate === category;
     })
-
     .sort((a, b) => {
       if (sort === "recentes") {
         return new Date(b.date_conclusion) - new Date(a.date_conclusion);
@@ -70,11 +110,15 @@ function Certificates() {
       }
 
       if (sort === "az") {
-        return a.name_certificate.localeCompare(b.name_certificate);
+        return (a.name_certificate || "").localeCompare(
+          b.name_certificate || "",
+        );
       }
 
       if (sort === "za") {
-        return b.name_certificate.localeCompare(a.name_certificate);
+        return (b.name_certificate || "").localeCompare(
+          a.name_certificate || "",
+        );
       }
 
       return 0;
@@ -85,17 +129,39 @@ function Certificates() {
       <Sidebar />
 
       <main className={styles.content}>
+        {/* CABEÇALHO */}
         <CertificateHeader onRegister={handleRegister} />
-        <CertificateFilters search={search} setSearch={setSearch} category={category} setCategory={setCategory} sort={sort} setSort={setSort}/>
 
+        {/* FILTROS */}
+        <CertificateFilters
+          search={search}
+          setSearch={setSearch}
+          category={category}
+          setCategory={setCategory}
+          sort={sort}
+          setSort={setSort}
+        />
+
+        {/* CARREGAMENTO */}
         {loading && <p>Carregando certificados...</p>}
-        {error && <p>{error}</p>}
+
+        {/* ERRO */}
+        {!loading && error && <p>{error}</p>}
+
+        {/* LISTA DE CERTIFICADOS */}
         {!loading && !error && filteredCertificates.length > 0 && (
           <section className={styles.certificateGrid}>
             {filteredCertificates.map((certificate) => (
-              <CertificateCard key={certificate.id_certificate} certificate={certificate} onClick={handleCertificate} /> 
-              ))} </section> )}
+              <CertificateCard
+                key={certificate.id_certificate}
+                certificate={certificate}
+                onClick={handleCertificate}
+              />
+            ))}
+          </section>
+        )}
 
+        {/* NENHUM RESULTADO NOS FILTROS */}
         {!loading &&
           !error &&
           certificates.length > 0 &&
@@ -103,6 +169,7 @@ function Certificates() {
             <CertificateEmptyState type="filter" />
           )}
 
+        {/* NENHUM CERTIFICADO CADASTRADO */}
         {!loading && !error && certificates.length === 0 && (
           <CertificateEmptyState type="empty" onRegister={handleRegister} />
         )}
